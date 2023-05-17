@@ -373,10 +373,7 @@ export function useScrollSnap({
 
       const container = scrollContainerRef.current
       // to prevent scroll inertia bug on touch devices
-      // container.style.overflow = 'hidden'
-      const scroll = getScrollPosition()
-      container.scrollTo({ top: scroll.top + 1, left: scroll.left + 1 })
-      onInputEnd()
+      container.style.overflow = 'hidden'
       swipe.current = null
     },
     [onInputEnd]
