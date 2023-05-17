@@ -1,0 +1,440 @@
+/* eslint-disable dot-notation */
+/* eslint-disable no-unused-expressions */
+/* eslint-disable prettier/prettier */
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+const defaultOptions = {
+  duration: 300,
+  easing: 'ease-out',
+  fireAnimationEndEventOnStop: false
+}
+export class Animation {
+  progress
+  requestId
+  constructor(options) {
+    const _options = { ...defaultOptions, ...options }
+    switch (_options.easing) {
+      case 'ease-in':
+        _options.timing = (t) => t * t
+        break
+      case 'ease-out':
+        _options.timing = (t) => 1 - Math.pow(1 - t, 2)
+        break
+      case 'ease-in-out':
+        _options.timing = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2)
+        break
+      default:
+        if (typeof _options.easing === 'function') {
+          _options.timing = _options.easing
+          break
+        }
+        _options.timing = (t) => t
+        break
+    }
+    this.options = _options
+    this.stopped = false
+    this.started = false
+    this._events = {}
+  }
+
+  start() {
+    const timing = this.options.timing
+    const update = this.options.update
+    const duration = this.options.duration
+    if (!window.requestAnimationFrame) {
+      update(1)
+      if (this._events['end']) {
+        this._emit('end', this.progress)
+      }
+      console.warn('Your browser does not support window.requestAnimationFrame')
+      return
+    }
+    let startTime = window.performance.now()
+    function _animate(time) {
+      if (!this.started) {
+        if (this._events['start']) this._emit('start')
+        this.started = true
+      }
+      if (this.stopped) {
+        if (this._events['end'] && this.options.fireAnimationEndEventOnStop) this.emit('end', this.progress)
+        return
+      }
+      // timeFraction goes from 0 to 1
+      let timeFraction = (time - startTime) / duration
+      if (timeFraction < 0) {
+        timeFraction = 0
+        startTime = time
+      }
+      if (timeFraction > 1) {
+        timeFraction = 1
+        if (this._events['end']) {
+          this._emit('end', this.progress)
+        }
+      }
+      // calculate the current animation state
+      const progress = timing(timeFraction)
+      // update it
+      this.progress = progress
+      if (this.options.fromTo) {
+        const fromTo = this.options.fromTo
+        const dist = fromTo[1] - fromTo[0]
+        update(fromTo[0] + progress * dist)
+      } else {
+        update(progress)
+      }
+      if (timeFraction < 1) {
+        this.requestId = window.requestAnimationFrame(_animate.bind(this))
+      }
+    }
+    this.requestId = window.requestAnimationFrame(_animate.bind(this))
+  }
+
+  stop() {
+    window.cancelAnimationFrame(this.requestId)
+    this.stopped = true
+  }
+
+  update(callback) {
+    this.options.update = callback
+    this.stopped = false
+    this.started = false
+    return this
+  }
+
+  on(name, callback) {
+    if (!this._events[name]) {
+      this._events[name] = []
+    }
+    this._events[name].push(callback)
+  }
+
+  removeListener(name, callback) {
+    if (!this._events[name]) return
+    const filterListeners = (listener) => listener !== callback
+    this._events[name] = this._events[name].filter(filterListeners)
+  }
+
+  removeAllListeners() {
+    this._events = {}
+  }
+
+  _emit(name, data) {
+    if (!this._events[name]) {
+      console.warn(`Can't emit an event. Event "${name}" doesn't exits.`)
+      return
+    }
+    this._events[name].forEach((callback) => {
+      callback(data)
+    })
+  }
+}
+
+let CONTAINER_INDEX = 0
+export function useScrollSnap({
+  scrollContainerRef,
+  childrenSelector = '> div',
+  treshold = 30,
+  swipeTreshold = 200,
+  easing = 'ease-out',
+  duration = 250,
+  onSnapStart,
+  onSnap
+}) {
+  const [windowDimension, setWindowDimension] = useState(null)
+  const isInteracting = useRef(false)
+  const animation = useRef(null)
+  const snapPositionList = useRef([])
+  const activePosition = useRef({ top: 0, left: 0 })
+  const index = useRef(null)
+  const swipe = useRef(null)
+  const scrollStart = useRef(null)
+  const timeOut = useRef(null)
+
+  useEffect(() => {
+    index.current = CONTAINER_INDEX
+    scrollContainerRef.current.dataset.snapContainerId = index.current
+    scrollContainerRef.current.style.position = 'relative'
+    animation.current = new Animation({ easing, duration })
+    CONTAINER_INDEX++
+  }, [])
+
+  useEffect(() => {
+    const reduceToSnapPositions = (positions, child, i) => [
+      ...positions,
+      {
+        index: i,
+        top: child.offsetTop,
+        left: child.offsetLeft,
+        right: child.offsetLeft + child.offsetWidth,
+        bottom: child.offsetTop + child.offsetHeight
+      }
+    ]
+    const query = `[data-snap-container-id="${index.current}"] ${childrenSelector}`
+    snapPositionList.current = Array.from(scrollContainerRef.current.querySelectorAll(query)).reduce(
+      reduceToSnapPositions,
+      []
+    )
+    console.log(Array.from(snapPositionList.current))
+    activePosition.current = snapPositionList.current[0]
+  }, [childrenSelector, windowDimension])
+
+  const getScrollPosition = useCallback(() => {
+    const container = scrollContainerRef.current
+    return {
+      top: container.scrollTop,
+      left: container.scrollLeft
+    }
+  }, [])
+
+  const snapToDestination = useCallback(
+    (destination, currentPosition) => {
+      currentPosition = currentPosition || getScrollPosition()
+      const xDist = destination.left - currentPosition.left
+      const yDist = destination.top - currentPosition.top
+      if (
+        xDist === 0 &&
+        yDist === 0 &&
+        destination.left === activePosition.current.left &&
+        destination.top === activePosition.current.top
+      ) {
+        if (onSnapStart) onSnapStart(destination.index)
+        activePosition.current = destination
+        return
+      }
+
+      const draw = (progress) => {
+        const left = currentPosition.left + progress * xDist
+        const top = currentPosition.top + progress * yDist
+        scrollContainerRef.current.scrollTo({ top, left })
+      }
+      animation.current?.stop()
+      animation.current.update(draw)
+      animation.current.removeAllListeners()
+      animation.current.on('start', () => {
+        if (onSnapStart) onSnapStart(destination.index)
+        activePosition.current = destination
+      })
+      animation.current.on('end', () => {
+        if (onSnap) onSnap(destination.index)
+      })
+      animation.current.start()
+    },
+    [getScrollPosition, onSnapStart, onSnap]
+  )
+
+  const getPositionsInViewport = useCallback(
+    (container) => {
+      const scroll = getScrollPosition()
+      const boundry = {
+        ...scroll,
+        right: scroll.left + container.clientWidth,
+        bottom: scroll.top + container.clientHeight
+      }
+
+      return snapPositionList.current.filter((pos) => {
+        return (
+          pos.top < boundry.bottom &&
+          pos.bottom > boundry.top &&
+          pos.left < boundry.right &&
+          pos.right > boundry.left
+        )
+      })
+    },
+    [getScrollPosition, snapPositionList]
+  )
+
+  const getSnapPosition = useCallback(
+    (deltaLeft, deltaTop) => {
+      const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
+      const index =
+        deltaLeft < 0 || deltaTop < 0
+          ? positionsInViewport[0].index + 1
+          : positionsInViewport[positionsInViewport.length - 1].index - 1
+      return snapPositionList.current[index] || positionsInViewport[0]
+    },
+    [getPositionsInViewport]
+  )
+
+  const getNearestPositionInViewport = useCallback(() => {
+    const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
+    const scroll = getScrollPosition()
+    console.log(positionsInViewport)
+    if (positionsInViewport.length === 1) return positionsInViewport[0]
+    return positionsInViewport.sort((a, b) => {
+      const leftCenter = (a.left + b.left) / 2
+      const topCenter = (a.top + b.top) / 2
+      // to fix the reverse sort in firefox (a and b is swapped)
+      const reverseFactor = a.left > b.left || a.top > b.top ? 1 : -1
+      console.log(scroll.left - leftCenter || scroll.top - topCenter)
+      return (leftCenter - scroll.left) * reverseFactor || (topCenter - scroll.top) * reverseFactor
+    })[0]
+  }, [getPositionsInViewport, getScrollPosition])
+
+  const isSwipeTresholdExceeded = useCallback(
+    (deltaLeft, deltaTop) => {
+      if (deltaLeft === 0 && deltaTop === 0) return false
+      const calcWithInertia = () => {
+        const DEC = 625 * Math.pow(10, -6)
+        const speed =
+          swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed
+        return (speed * speed) / (2 * DEC) > swipeTreshold
+      }
+
+      return Math.abs(deltaTop) > swipeTreshold || Math.abs(deltaLeft) > swipeTreshold || calcWithInertia()
+    },
+    [swipeTreshold]
+  )
+
+  const findAPositionAndSnap = useCallback(() => {
+    const scroll = getScrollPosition()
+    const deltaLeft = (scrollStart.current?.left || activePosition.current.left) - scroll.left
+    const deltaTop = (scrollStart.current?.top || activePosition.current.top) - scroll.top
+
+    let destination
+    const tresholdExceeded = swipe.current
+      ? isSwipeTresholdExceeded(deltaLeft, deltaTop)
+      : Math.abs(deltaLeft) > treshold || Math.abs(deltaTop) > treshold
+
+    if (tresholdExceeded) {
+      const snapPosition = getSnapPosition(deltaLeft, deltaTop)
+      destination = snapPosition
+    } else {
+      destination = getNearestPositionInViewport()
+    }
+
+    snapToDestination(destination, scroll)
+  }, [getScrollPosition, isSwipeTresholdExceeded, treshold, getSnapPosition, snapToDestination])
+
+  const enableScroll = useCallback(() => {
+    const container = scrollContainerRef.current
+    // to prevent scroll inertia bug on touch devices
+    container.style.overflow = 'auto'
+  }, [])
+
+  const onScrollEnd = useCallback(
+    (time) => {
+      return (e) => {
+        clearTimeout(timeOut.current)
+        if (isInteracting.current) {
+          return
+        }
+        // Set a timeout to run after scrolling ends
+        timeOut.current = setTimeout(() => {
+          enableScroll()
+          findAPositionAndSnap()
+        }, time)
+      }
+    },
+    [enableScroll, findAPositionAndSnap]
+  )
+
+  const onInput = useCallback(
+    (e) => {
+      animation.current?.stop()
+      enableScroll()
+      onScrollEnd(66)()
+    },
+    [enableScroll, onScrollEnd]
+  )
+
+  const onInputStart = useCallback(() => {
+    scrollStart.current = getScrollPosition()
+    animation.current?.stop()
+    enableScroll()
+    isInteracting.current = true
+  }, [enableScroll])
+
+  const onInputEnd = useCallback(() => {
+    isInteracting.current = false
+    findAPositionAndSnap()
+    scrollStart.current = null
+  }, [findAPositionAndSnap])
+
+  const onTouchStart = useCallback(
+    (e) => {
+      const touch = e.changedTouches[0]
+      swipe.current = {}
+      swipe.current.xStart = touch.clientX
+      swipe.current.yStart = touch.clientY
+      swipe.current.startTime = window.performance ? window.performance.now() : Date.now()
+
+      onInputStart()
+    },
+    [onInputStart]
+  )
+
+  const onTouchEnd = useCallback(
+    (e) => {
+      const touch = e.changedTouches[0]
+      const endTime = window.performance ? window.performance.now() : Date.now()
+      const travelTime = endTime - swipe.current.startTime
+      swipe.current.xSpeed = Math.abs(swipe.current.xStart - touch.clientX) / travelTime
+      swipe.current.ySpeed = Math.abs(swipe.current.yStart - touch.clientY) / travelTime
+
+      const container = scrollContainerRef.current
+      // to prevent scroll inertia bug on touch devices
+      // container.style.overflow = 'hidden'
+      const scroll = getScrollPosition()
+      container.scrollTo({ top: scroll.top + 1, left: scroll.left + 1 })
+      onInputEnd()
+      swipe.current = null
+    },
+    [onInputEnd]
+  )
+
+  useEventListener('scroll', onScrollEnd(66), scrollContainerRef.current, { passive: true })
+  useEventListener('touchstart', onTouchStart, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('touchend', onTouchEnd, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('keydown', onInputStart, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('keyup', onInputEnd, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('mousedown', onInputStart, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('mouseup', onInputEnd, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener('wheel', onInput, scrollContainerRef.current, {
+    passive: true
+  })
+  useEventListener(
+    'resize',
+    () =>
+      setWindowDimension({
+        height: window.innerHeight,
+        width: window.innerWidth
+      }),
+    window
+  )
+
+  const snapTo = useCallback(
+    (index) => {
+      snapToDestination(snapPositionList.current[index])
+    },
+    [snapToDestination]
+  )
+  return snapTo
+}
+export function useEventListener(eventName, handler, element, options) {
+  const _handler = useRef()
+  useEffect(() => {
+    _handler.current = handler
+  }, [handler])
+  useEffect(() => {
+    const isHTMLElement = element && element.addEventListener
+    if (!isHTMLElement) return
+
+    const eventHandler = (e) => _handler.current(e)
+
+    element.addEventListener(eventName, eventHandler, options)
+    console.log('added event listener', eventName)
+    return () => element.removeEventListener(eventName, eventHandler, options)
+  }, [eventName, element])
+}

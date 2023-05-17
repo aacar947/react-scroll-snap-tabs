@@ -1,9 +1,16 @@
 /* add css module styles here (optional) */
-
-.test {
-  margin: 2em;
-  padding: 0.5em;
-  border: 2px solid #000;
-  font-size: 2em;
-  text-align: center;
+.tab-content {
+  width: 100%;
+  -ms-overflow-style: none; /*IE 11*/
+  overflow: -moz-scrollbars-none; /*FF*/
+}
+.tab-content::-webkit-scrollbar {
+  width: 0 !important;
+  background: transparent;
+}
+.tab-content > * {
+  min-width: 100%;
+}
+.tab-link {
+  cursor: pointer;
 }
