@@ -246,6 +246,7 @@ export function useScrollSnap({
   const getSnapPosition = useCallback(
     (deltaLeft, deltaTop) => {
       const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
+      if (positionsInViewport.length === 1) return positionsInViewport[0]
       const index =
         deltaLeft < 0 || deltaTop < 0
           ? positionsInViewport[0].index + 1
@@ -374,6 +375,7 @@ export function useScrollSnap({
       const container = scrollContainerRef.current
       // to prevent scroll inertia bug on touch devices
       container.style.overflow = 'hidden'
+      onInputEnd()
       swipe.current = null
     },
     [onInputEnd]
