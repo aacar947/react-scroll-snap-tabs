@@ -11,6 +11,3 @@
 .tab-content > * {
   min-width: 100%;
 }
-.tab-link {
-  cursor: pointer;
-}

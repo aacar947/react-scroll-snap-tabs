@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import React, { useState, useContext, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import React, { useState, useContext, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import styles from './styles.module.css'
 import { useScrollSnap } from './utilities'
@@ -35,22 +35,33 @@ const LAYOUT_PROP_VALUES = {
   }
 }
 
-function ScrollSnapTabs({ children, defaultKey, eventKeys, style, layout = 'vertical' }) {
+function ScrollSnapTabs({
+  children,
+  defaultKey,
+  eventKeys,
+  style,
+  layout = 'vertical',
+  snapDuration,
+  easing,
+  indicatorClass,
+  indicatorStyle,
+  indicatorSize,
+  onIndicatorMove
+}) {
   const propValues = layout === 'horizontal' ? LAYOUT_PROP_VALUES.horizontal : LAYOUT_PROP_VALUES.vertical
   const propNames = layout === 'horizontal' ? LAYOUT_PROP_NAMES.horizontal : LAYOUT_PROP_NAMES.vertical
 
-  const [currentEvent, setCurrentEvent] = useState(defaultKey || null)
+  const [currentEvent, setCurrentEvent] = useState(null)
   const [events, setEvents] = useState([])
   const indicatorRef = useRef(null)
   const contentRef = useRef(null)
-  const snapToRef = useRef(null)
+  const snapTo = useRef(null)
   const linkMapRef = useRef(new Map())
 
   useEffect(() => {
     if (!currentEvent && events.length > 0) {
-      setCurrentEvent(() => events[0])
+      setCurrentEvent(defaultKey || events[0])
     }
-    console.log('event:', currentEvent)
   }, [events, setCurrentEvent])
 
   return (
@@ -61,10 +72,20 @@ function ScrollSnapTabs({ children, defaultKey, eventKeys, style, layout = 'vert
         indicatorRef,
         contentRef,
         linkMapRef,
-        snapToRef,
+        snapTo,
         propValues,
         propNames,
-        snapTo: snapToRef.current
+        defaultKey,
+        indicatorOptions: {
+          onIndicatorMove,
+          indicatorClass,
+          indicatorStyle,
+          indicatorSize
+        },
+        options: {
+          duration: snapDuration,
+          easing
+        }
       }}
     >
       <div
@@ -91,13 +112,14 @@ function Nav({
   activeLinkStyle = { color: 'green' },
   indicatorColor,
   indicatorClass,
+  indicatorSize,
   indicatorStyle,
   children,
   style = {},
   linkStyle = {},
   linkClass = ''
 }) {
-  const { indicatorRef, propValues, propNames } = useContext(TabProvider)
+  const { indicatorRef, propValues, propNames, indicatorOptions, layout } = useContext(TabProvider)
 
   const createNavLinks = (event, i) => {
     return (
@@ -112,74 +134,82 @@ function Nav({
     )
   }
 
-  const _children =
-    children &&
-    React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        return React.cloneElement(child, {
-          style: linkStyle,
-          className: linkClass,
-          activeClass: activeLinkClass,
-          activeStyle: activeLinkStyle
-        })
-      }
-      return child
-    })
+  const _children = useMemo(() => {
+    return (
+      children &&
+      React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.props.__TYPE === 'Link') {
+          return React.cloneElement(child, {
+            style: { ...child.props.style, ...linkStyle },
+            className: child.props.className + linkClass,
+            activeClass: child.props.activeClass || activeLinkClass,
+            activeStyle: child.props.activeStyle || activeLinkStyle
+          })
+        }
+        return child
+      })
+    )
+  }, [children])
+
+  const defaultStyle = {
+    display: 'flex',
+    flexDirection: propValues.flexDirection,
+    position: 'relative'
+  }
 
   return (
-    <div
-      style={{ ...style, display: 'flex', flexDirection: propValues.flexDirection, position: 'relative' }}
-      className={className}
-    >
+    <div style={{ ...style, ...defaultStyle }} className={className}>
       <div
-        className={indicatorClass}
         style={{
-          backgroundColor: indicatorColor || 'black',
-          [propNames.minHeight]: '2px',
           position: 'absolute',
           bottom: propValues.indicatorBottom,
-          left: propValues.indicatorLeft,
-          ...indicatorStyle
+          left: propValues.indicatorLeft
         }}
         ref={indicatorRef}
-      />
+      >
+        <div
+          className={indicatorClass || indicatorOptions.indicatorClass || ''}
+          style={{
+            width: (layout === 'horizontal' && '100%') || indicatorSize || indicatorOptions.indicatorSize,
+            height: (layout === 'horizontal' && indicatorSize) || indicatorOptions.indicatorSize || '100%',
+            margin: 'auto ',
+            [propNames.minHeight]: '3px',
+            backgroundColor: indicatorColor || 'black',
+            ...indicatorOptions.indicatorStyle,
+            ...indicatorStyle
+          }}
+        />
+      </div>
       {_children || (eventKeys && eventKeys.map(createNavLinks))}
     </div>
   )
 }
 Nav.propTypes = {
-  eventKeys: PropTypes.arrayOf(PropTypes.string),
-  className: PropTypes.string,
-  children: PropTypes.node
+  eventKeys: PropTypes.arrayOf(PropTypes.string)
 }
 
-function Link({ eventKey, className, children, style, activeStyle = { color: 'green' }, activeClass }) {
+function Link({ eventKey, className, children, style, activeStyle, activeClass }) {
   const { eventHandler, events, linkMapRef } = useContext(TabProvider)
   const [selectedTab, setSelectedTab] = eventHandler
   const [, setEvents] = events
   const linkRef = useRef(null)
+
   const handleClick = (e) => {
     setSelectedTab(eventKey)
-    //console.log(selectedTab)
   }
 
   useLayoutEffect(() => {
-    className += styles['tab-link']
     setEvents((prev) => [...prev, eventKey])
     linkMapRef.current.set(eventKey, linkRef.current)
-    console.log('tabs: ', linkMapRef.current)
-  }, [eventKey])
+  }, [eventKey, setEvents])
 
-  const _className =
-    selectedTab === eventKey
-      ? className + `${className} ${styles['tab-link']} ${activeClass}`
-      : `${className} ${styles['tab-link']}`
-
+  const _className = selectedTab === eventKey && activeClass ? className + ' ' + activeClass : className
+  const _style = { cursor: 'pointer', margin: '0.5rem', ...style }
   return (
     <div
       onClick={handleClick}
       className={_className}
-      style={selectedTab === eventKey ? { ...style, ...activeStyle } : style}
+      style={selectedTab === eventKey ? { ..._style, ...activeStyle } : _style}
       ref={linkRef}
     >
       {children || eventKey}
@@ -187,35 +217,70 @@ function Link({ eventKey, className, children, style, activeStyle = { color: 'gr
   )
 }
 
-function Content({ children, style, ...rest }) {
-  const { eventHandler, indicatorRef, events, linkMapRef, contentRef, snapToRef, propValues, propNames } =
-    useContext(TabProvider)
+Link.propTypes = {
+  eventKey: PropTypes.string,
+  activeStyle: PropTypes.object,
+  __TYPE: PropTypes.string
+}
+
+Link.defaultProps = {
+  __TYPE: 'Link'
+}
+
+function Content({ children, style, paneStyle, paneClass, ...rest }) {
+  const {
+    eventHandler,
+    indicatorRef,
+    options,
+    events,
+    linkMapRef,
+    contentRef,
+    snapTo,
+    propValues,
+    propNames,
+    defaultKey,
+    indicatorOptions
+  } = useContext(TabProvider)
 
   const [links] = events
-  const [, setCurrentEvent] = eventHandler
+  const [currentEvent, setCurrentEvent] = eventHandler
   const prevScroll = useRef(null)
 
   const onSnapStart = useCallback(
     (index) => {
+      if (currentEvent === links[index]) return
       setCurrentEvent(links[index])
     },
     [links, setCurrentEvent]
   )
 
-  const snapTo = useScrollSnap({
-    scrollContainerRef: contentRef,
-    onSnapStart,
-    duration: 250
-  })
+  const _snapTo = useScrollSnap({ ...options, scrollContainerRef: contentRef, onSnapStart })
 
-  useEffect(() => {
-    snapToRef.current = snapTo
-  }, [snapTo])
+  useLayoutEffect(() => {
+    snapTo.current = _snapTo
+  }, [_snapTo])
 
   const mapNumber = (number, numberMin, numberMax, mapFrom, mapTo) => {
     number = Math.min(numberMax, Math.max(number, numberMin))
-    return ((number - numberMin) / (numberMax - numberMin)) * (mapTo - mapFrom) + mapFrom
+    return mapFrom + ((number - numberMin) / (numberMax - numberMin)) * (mapTo - mapFrom)
   }
+
+  const moveIndicator = (progress, prevIndex, direction) => {
+    if (typeof indicatorOptions.onIndicatorMove === 'function')
+      indicatorOptions.onIndicatorMove({ target: indicatorRef.current.firstChild, progress })
+
+    const current = linkMapRef.current.get(links[prevIndex])
+    const currentLeft = (current && current[propNames.offsetLeft]) || 0
+    const currentWidth = (current && current[propNames.offsetWidth]) || 0
+    const target = linkMapRef.current.get(links[direction])
+    const targetLeft = target && target[propNames.offsetLeft]
+    const targetWidth = target && target[propNames.offsetWidth]
+    const indicator = indicatorRef.current
+
+    indicator.style[propNames.left] = mapNumber(progress, 0, 1, currentLeft, targetLeft) + 'px'
+    indicator.style[propNames.width] = mapNumber(progress, 0, 1, currentWidth, targetWidth) + 'px'
+  }
+
   const handleScroll = (e) => {
     let prevIndex, direction
     const scrollValue =
@@ -235,17 +300,28 @@ function Content({ children, style, ...rest }) {
     }
 
     prevScroll.current = scrollValue
-    const current = linkMapRef.current.get(links[prevIndex])
-    const currentLeft = (current && current[propNames.offsetLeft]) || 0
-    const currentWidth = (current && current[propNames.offsetWidth]) || 0
-    const target = linkMapRef.current.get(links[direction])
-    const targetLeft = target && target[propNames.offsetLeft]
-    const targetWidth = target && target[propNames.offsetWidth]
-    const indicator = indicatorRef.current
-
-    indicator.style[propNames.left] = mapNumber(unitScroll, 0, 1, currentLeft, targetLeft) + 'px'
-    indicator.style[propNames.width] = mapNumber(unitScroll, 0, 1, currentWidth, targetWidth) + 'px'
+    moveIndicator(unitScroll, prevIndex, direction)
   }
+
+  useLayoutEffect(() => {
+    const currIndex = links.indexOf(defaultKey)
+    moveIndicator(1, currIndex, currIndex)
+  }, [links])
+
+  const _children = useMemo(() => {
+    return (
+      children &&
+      React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.props.__TYPE === 'Pane') {
+          return React.cloneElement(child, {
+            style: { ...child.props.style, ...paneStyle },
+            className: child.props.className + paneClass
+          })
+        }
+        return child
+      })
+    )
+  }, [children])
 
   return (
     <div
@@ -262,9 +338,14 @@ function Content({ children, style, ...rest }) {
       }}
       {...rest}
     >
-      {children}
+      {_children}
     </div>
   )
+}
+
+Content.propTypes = {
+  paneClass: PropTypes.string,
+  paneStyle: PropTypes.object
 }
 
 function Pane({ children, eventKey, ...rest }) {
@@ -274,7 +355,7 @@ function Pane({ children, eventKey, ...rest }) {
   const [links] = events
 
   useEffect(() => {
-    if (eventKey === currentEvent) snapTo(links.indexOf(eventKey))
+    if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey))
   })
 
   return (
@@ -282,6 +363,15 @@ function Pane({ children, eventKey, ...rest }) {
       {children}
     </div>
   )
+}
+
+Pane.propTypes = {
+  eventKey: PropTypes.string,
+  __TYPE: PropTypes.string
+}
+
+Pane.defalutProps = {
+  __TYPE: 'Pane'
 }
 
 ScrollSnapTabs.Nav = Nav

@@ -174,7 +174,7 @@ export function useScrollSnap({
       reduceToSnapPositions,
       []
     )
-    console.log(Array.from(snapPositionList.current))
+
     activePosition.current = snapPositionList.current[0]
   }, [childrenSelector, windowDimension])
 
@@ -216,6 +216,7 @@ export function useScrollSnap({
       })
       animation.current.on('end', () => {
         if (onSnap) onSnap(destination.index)
+        isInteracting.current = false
       })
       animation.current.start()
     },
@@ -246,7 +247,7 @@ export function useScrollSnap({
   const getSnapPosition = useCallback(
     (deltaLeft, deltaTop) => {
       const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
-      if (positionsInViewport.length === 1) return positionsInViewport[0]
+
       const index =
         deltaLeft < 0 || deltaTop < 0
           ? positionsInViewport[0].index + 1
@@ -259,14 +260,12 @@ export function useScrollSnap({
   const getNearestPositionInViewport = useCallback(() => {
     const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
     const scroll = getScrollPosition()
-    console.log(positionsInViewport)
     if (positionsInViewport.length === 1) return positionsInViewport[0]
     return positionsInViewport.sort((a, b) => {
       const leftCenter = (a.left + b.left) / 2
       const topCenter = (a.top + b.top) / 2
-      // to fix the reverse sort in firefox (a and b is swapped)
+      // to fix the reverse sort in firefox (a and b are swapped)
       const reverseFactor = a.left > b.left || a.top > b.top ? 1 : -1
-      console.log(scroll.left - leftCenter || scroll.top - topCenter)
       return (leftCenter - scroll.left) * reverseFactor || (topCenter - scroll.top) * reverseFactor
     })[0]
   }, [getPositionsInViewport, getScrollPosition])
@@ -322,6 +321,7 @@ export function useScrollSnap({
         // Set a timeout to run after scrolling ends
         timeOut.current = setTimeout(() => {
           enableScroll()
+          console.log('onScrollEnd')
           findAPositionAndSnap()
         }, time)
       }
@@ -332,6 +332,7 @@ export function useScrollSnap({
   const onInput = useCallback(
     (e) => {
       animation.current?.stop()
+      isInteracting.current = false
       enableScroll()
       onScrollEnd(66)()
     },
@@ -415,6 +416,7 @@ export function useScrollSnap({
 
   const snapTo = useCallback(
     (index) => {
+      isInteracting.current = true
       snapToDestination(snapPositionList.current[index])
     },
     [snapToDestination]
