@@ -1,14 +1,14 @@
 /* eslint-disable dot-notation */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable prettier/prettier */
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
 
 const defaultOptions = {
   duration: 300,
   easing: 'ease-out',
   fireAnimationEndEventOnStop: false
 }
-export class Animation {
+class Animation {
   progress
   requestId
   constructor(options) {
@@ -150,7 +150,7 @@ export function useScrollSnap({
   const scrollStart = useRef(null)
   const timeOut = useRef(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     index.current = CONTAINER_INDEX
     scrollContainerRef.current.dataset.snapContainerId = index.current
     scrollContainerRef.current.style.position = 'relative'
@@ -158,7 +158,7 @@ export function useScrollSnap({
     CONTAINER_INDEX++
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const reduceToSnapPositions = (positions, child, i) => [
       ...positions,
       {
@@ -415,11 +415,16 @@ export function useScrollSnap({
   )
 
   const snapTo = useCallback(
-    (index) => {
+    (index, disableAnimation = false) => {
+      if (disableAnimation) {
+        const { top, left } = snapPositionList.current[index] || snapPositionList.current[0]
+        scrollContainerRef.current.scrollTo({ top, left })
+        return
+      }
       isInteracting.current = true
       snapToDestination(snapPositionList.current[index])
     },
-    [snapToDestination]
+    [snapToDestination, snapPositionList]
   )
   return snapTo
 }
