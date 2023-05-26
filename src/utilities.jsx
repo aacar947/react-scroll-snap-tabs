@@ -321,7 +321,6 @@ export function useScrollSnap({
         // Set a timeout to run after scrolling ends
         timeOut.current = setTimeout(() => {
           enableScroll()
-          console.log('onScrollEnd')
           findAPositionAndSnap()
         }, time)
       }
@@ -367,6 +366,7 @@ export function useScrollSnap({
 
   const onTouchEnd = useCallback(
     (e) => {
+      if (!swipe.current) return
       const touch = e.changedTouches[0]
       const endTime = window.performance ? window.performance.now() : Date.now()
       const travelTime = endTime - swipe.current.startTime
@@ -428,6 +428,108 @@ export function useScrollSnap({
   )
   return snapTo
 }
+
+export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-out') {
+  const animation = useRef(new Animation({ duration, easing }))
+
+  const getScrollPosition = useCallback(() => {
+    const container = containerRef.current
+    return {
+      top: container.scrollTop,
+      left: container.scrollLeft
+    }
+  }, [containerRef])
+
+  const getBoundryBox = useCallback(() => {
+    const container = containerRef.current
+    const scroll = getScrollPosition()
+    return {
+      ...scroll,
+      bottom: scroll.top + container.clientHeight,
+      right: scroll.left + container.clientWidth
+    }
+  }, [getScrollPosition, containerRef])
+
+  const getRelativeBoundryBox = useCallback((element) => {
+    return {
+      left: element.offsetLeft,
+      top: element.offsetTop,
+      right: element.offsetLeft + element.offsetWidth,
+      bottom: element.offsetTop + element.offsetHeight
+    }
+  }, [])
+
+  const containsChild = useCallback(
+    (child) => {
+      const container = containerRef.current
+      // https://www.geeksforgeeks.org/how-to-check-if-an-element-is-a-child-of-a-parent-using-javascript/
+      if (window.document.contains) {
+        return container.contains(child)
+      }
+      let node = child.parentNode
+      // keep iterating unless null
+      while (node != null) {
+        if (node === container) {
+          return true
+        }
+        node = node.parentNode
+      }
+      return false
+    },
+    [containerRef]
+  )
+
+  const scrollToDestination = useCallback(
+    (destination) => {
+      const container = containerRef.current
+
+      const scroll = getScrollPosition()
+      const distX = destination.left - scroll.left
+      const distY = destination.top - scroll.top
+
+      const draw = (progress) => {
+        container.scrollLeft = scroll.left + distX * progress
+        container.scrollTop = scroll.top + distY * progress
+      }
+
+      animation.current.stop()
+      animation.current.update(draw)
+      animation.current.start()
+    },
+    [getScrollPosition, containerRef]
+  )
+
+  return useCallback(
+    (element, offset) => {
+      if (!containsChild(element)) return
+      const OFFSET = {}
+      OFFSET.x = typeof offset === 'object' ? Number(offset.x) || 0 : Number(offset) || 0
+      OFFSET.y = typeof offset === 'object' ? Number(offset.y) || 0 : Number(offset) || 0
+
+      const boundry = getBoundryBox()
+      const childRect = getRelativeBoundryBox(element)
+      let deltaX, deltaY
+
+      if (
+        (childRect.left > boundry.left && childRect.right > boundry.right) ||
+        (childRect.top > boundry.top && childRect.bottom > boundry.bottom)
+      ) {
+        deltaX = childRect.right - boundry.right + OFFSET.x
+        deltaY = childRect.bottom - boundry.bottom + OFFSET.y
+      } else if (
+        (childRect.left < boundry.left && childRect.right < boundry.right) ||
+        (childRect.top < boundry.top && childRect.bottom < boundry.bottom)
+      ) {
+        deltaX = childRect.left - boundry.left - OFFSET.x
+        deltaY = childRect.top - boundry.top - OFFSET.y
+      } else return
+
+      const destination = { top: boundry.top + deltaY, left: boundry.left + deltaX }
+      scrollToDestination(destination)
+    },
+    [containsChild, getBoundryBox, getRelativeBoundryBox, scrollToDestination]
+  )
+}
 export function useEventListener(eventName, handler, element, options) {
   const _handler = useRef()
   useEffect(() => {
@@ -438,9 +540,8 @@ export function useEventListener(eventName, handler, element, options) {
     if (!isHTMLElement) return
 
     const eventHandler = (e) => _handler.current(e)
-
     element.addEventListener(eventName, eventHandler, options)
-    console.log('added event listener', eventName)
+
     return () => element.removeEventListener(eventName, eventHandler, options)
   }, [eventName, element])
 }

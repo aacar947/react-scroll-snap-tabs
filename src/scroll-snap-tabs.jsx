@@ -2,7 +2,7 @@
 import React, { useState, useContext, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import styles from './styles.module.css'
-import { useScrollSnap } from './utilities'
+import { useScrollSnap, useScrollIntoView } from './utilities'
 const TabProvider = React.createContext()
 
 const LAYOUT_PROP_NAMES = {
@@ -121,9 +121,19 @@ function Nav({
   linkStyle = {},
   linkClass = ''
 }) {
-  const { indicatorRef, propValues, propNames, indicatorOptions, onIndicatorMoveRef, layout } =
-    useContext(TabProvider)
-
+  const {
+    indicatorRef,
+    propValues,
+    propNames,
+    indicatorOptions,
+    linkMapRef,
+    eventHandler,
+    onIndicatorMoveRef,
+    layout
+  } = useContext(TabProvider)
+  const navContainerRef = useRef()
+  const [currentEvent] = eventHandler
+  const scrollIntoRelativeView = useScrollIntoView(navContainerRef)
   const createNavLinks = (event, i) => {
     return (
       <Link
@@ -140,6 +150,10 @@ function Nav({
   useLayoutEffect(() => {
     if (typeof onIndicatorMove === 'function') onIndicatorMoveRef.current = onIndicatorMove
   }, [])
+
+  useEffect(() => {
+    scrollIntoRelativeView(linkMapRef.current.get(currentEvent), 50)
+  }, [currentEvent, scrollIntoRelativeView])
   const _children = useMemo(() => {
     return (
       children &&
@@ -160,11 +174,12 @@ function Nav({
   const defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
-    position: 'relative'
+    position: 'relative',
+    overflow: 'auto'
   }
 
   return (
-    <div style={{ ...style, ...defaultStyle }} className={className}>
+    <div ref={navContainerRef} style={{ ...style, ...defaultStyle }} className={className}>
       <div
         style={{
           position: 'absolute',
@@ -211,7 +226,6 @@ function Link({ eventKey, className, children, style, activeStyle, activeClass =
 
   const _className = selectedTab === eventKey ? [className, activeClass].join(' ').trim() : className
   const _style = { cursor: 'pointer', margin: '0.5rem', ...style }
-  console.log(_className)
   return (
     <div
       onClick={handleClick}
@@ -265,7 +279,6 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
 
   const onSnap = useCallback(() => {
     prevEvent.current = currentEvent
-    console.log({ prevEvent })
   }, [currentEvent])
 
   const _snapTo = useScrollSnap({ ...options, scrollContainerRef: contentRef, onSnapStart, onSnap })
@@ -303,7 +316,6 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
       const delta = _targetIndex - _prevIndex
       let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
       _progress = Math.min(1, Math.max(_progress, 0))
-      console.log({ _progress, _prevIndex, _targetIndex })
       onIndicatorMoveRef.current({ target: indicatorRef.current.firstChild, progress: _progress })
     }
   }
