@@ -31,7 +31,7 @@ const LAYOUT_PROP_VALUES = {
   horizontal: {
     wrapperflexDirection: 'row',
     flexDirection: 'column',
-    indicatorLeft: '0'
+    indicatorRight: '0'
   }
 }
 
@@ -46,7 +46,10 @@ function ScrollSnapTabs({
   indicatorClass,
   indicatorStyle,
   indicatorSize,
-  onIndicatorMove
+  onIndicatorMove,
+  activeLinkClass,
+  activeLinkStyle,
+  ...rest
 }) {
   const propValues = layout === 'horizontal' ? LAYOUT_PROP_VALUES.horizontal : LAYOUT_PROP_VALUES.vertical
   const propNames = layout === 'horizontal' ? LAYOUT_PROP_NAMES.horizontal : LAYOUT_PROP_NAMES.vertical
@@ -64,6 +67,21 @@ function ScrollSnapTabs({
       setCurrentEvent(defaultKey || events[0])
     }
   }, [events, setCurrentEvent])
+
+  const _children = useMemo(() => {
+    return (
+      children &&
+      React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.props.__TYPE === 'Nav') {
+          return React.cloneElement(child, {
+            activeLinkStyle: child.props.activeLinkStyle || activeLinkStyle,
+            activeLinkClass: activeLinkClass || child.props.activeLinkClass
+          })
+        }
+        return child
+      })
+    )
+  }, [children, activeLinkClass])
 
   return (
     <TabProvider.Provider
@@ -92,15 +110,18 @@ function ScrollSnapTabs({
       <div
         className={styles.tabs}
         style={{
-          ...style,
           display: 'flex',
           flexDirection: propValues.wrapperflexDirection,
           height: '100%',
-          width: '100%'
+          width: '100%',
+          ...style
         }}
+        {...rest}
       >
-        {eventKeys && <Nav eventKeys={eventKeys} />}
-        {children}
+        {eventKeys && (
+          <Nav activeLinkClass={activeLinkClass} activeLinkStyle={activeLinkStyle} eventKeys={eventKeys} />
+        )}
+        {_children}
       </div>
     </TabProvider.Provider>
   )
@@ -110,7 +131,7 @@ function Nav({
   eventKeys,
   className,
   activeLinkClass,
-  activeLinkStyle = { color: 'green' },
+  activeLinkStyle = { color: '#23527C' },
   indicatorColor,
   indicatorClass,
   indicatorSize,
@@ -119,7 +140,9 @@ function Nav({
   children,
   style = {},
   linkStyle = {},
-  linkClass = ''
+  linkClass = '',
+  __TYPE,
+  ...rest
 }) {
   const {
     indicatorRef,
@@ -152,7 +175,7 @@ function Nav({
   }, [])
 
   useEffect(() => {
-    scrollIntoRelativeView(linkMapRef.current.get(currentEvent), 50)
+    scrollIntoRelativeView(linkMapRef.current.get(currentEvent), 100)
   }, [currentEvent, scrollIntoRelativeView])
   const _children = useMemo(() => {
     return (
@@ -169,22 +192,23 @@ function Nav({
         return child
       })
     )
-  }, [children])
-
+  }, [children, activeLinkClass])
   const defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
     position: 'relative',
-    overflow: 'auto'
+    overflow: 'auto',
+    scrollbarWidth: 'none'
   }
 
   return (
-    <div ref={navContainerRef} style={{ ...style, ...defaultStyle }} className={className}>
+    <div ref={navContainerRef} style={{ ...style, ...defaultStyle }} className={className} {...rest}>
+      {_children || (eventKeys && eventKeys.map(createNavLinks))}
       <div
         style={{
           position: 'absolute',
           bottom: propValues.indicatorBottom,
-          left: propValues.indicatorLeft
+          right: propValues.indicatorRight
         }}
         ref={indicatorRef}
       >
@@ -201,18 +225,31 @@ function Nav({
           }}
         />
       </div>
-      {_children || (eventKeys && eventKeys.map(createNavLinks))}
     </div>
   )
 }
 Nav.propTypes = {
-  eventKeys: PropTypes.arrayOf(PropTypes.string)
+  eventKeys: PropTypes.arrayOf(PropTypes.string),
+  activeLinkClass: PropTypes.string,
+  activeLinkStyle: PropTypes.object,
+  indicatorColor: PropTypes.string,
+  indicatorClass: PropTypes.string,
+  indicatorSize: PropTypes.number,
+  indicatorStyle: PropTypes.object,
+  onIndicatorMove: PropTypes.func,
+  linkStyle: PropTypes.object,
+  linkClass: PropTypes.string,
+  __TYPE: PropTypes.string
 }
 
-function Link({ eventKey, className, children, style, activeStyle, activeClass = 'active' }) {
+Nav.defaultProps = {
+  __TYPE: 'Nav'
+}
+
+function Link({ eventKey, className, children, style, activeStyle, activeClass, __TYPE, ...rest }) {
   const { eventHandler, events, linkMapRef } = useContext(TabProvider)
   const [selectedTab, setSelectedTab] = eventHandler
-  const [, setEvents] = events
+  const [, setLinks] = events
   const linkRef = useRef(null)
 
   const handleClick = (e) => {
@@ -220,18 +257,19 @@ function Link({ eventKey, className, children, style, activeStyle, activeClass =
   }
 
   useLayoutEffect(() => {
-    setEvents((prev) => [...prev, eventKey])
+    setLinks((prev) => [...prev, eventKey])
     linkMapRef.current.set(eventKey, linkRef.current)
-  }, [eventKey, setEvents])
+  }, [eventKey, setLinks])
 
   const _className = selectedTab === eventKey ? [className, activeClass].join(' ').trim() : className
-  const _style = { cursor: 'pointer', margin: '0.5rem', ...style }
+  const defaultStyle = { cursor: 'pointer', padding: '0.5rem', ...style }
   return (
     <div
       onClick={handleClick}
       className={_className}
-      style={selectedTab === eventKey ? { ..._style, ...activeStyle } : _style}
+      style={selectedTab === eventKey ? { ...defaultStyle, ...activeStyle } : defaultStyle}
       ref={linkRef}
+      {...rest}
     >
       {children || eventKey}
     </div>
@@ -245,8 +283,7 @@ Link.propTypes = {
 }
 
 Link.defaultProps = {
-  __TYPE: 'Link',
-  activeStyle: { textShadow: '0px 0px 1px black' }
+  __TYPE: 'Link'
 }
 
 function Content({ children, style, paneStyle, paneClass, ...rest }) {
@@ -257,7 +294,7 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
     events,
     linkMapRef,
     contentRef,
-    snapTo,
+    snapTo: _snapTo,
     propValues,
     propNames,
     defaultKey,
@@ -267,7 +304,7 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
   const [links] = events
   const [currentEvent, setCurrentEvent] = eventHandler
   const prevScroll = useRef(null)
-  const prevEvent = useRef(currentEvent)
+  const prevEventIndex = useRef(events.indexOf(currentEvent))
 
   const onSnapStart = useCallback(
     (index) => {
@@ -278,14 +315,24 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
   )
 
   const onSnap = useCallback(() => {
-    prevEvent.current = currentEvent
+    prevEventIndex.current = links.indexOf(currentEvent)
   }, [currentEvent])
 
-  const _snapTo = useScrollSnap({ ...options, scrollContainerRef: contentRef, onSnapStart, onSnap })
+  const { snapTo, isInteracting } = useScrollSnap({
+    ...options,
+    scrollContainerRef: contentRef,
+    onSnapStart,
+    onSnap
+  })
 
   useLayoutEffect(() => {
-    snapTo.current = _snapTo
-  }, [_snapTo])
+    _snapTo.current = snapTo
+  }, [snapTo])
+
+  useEffect(() => {
+    if (prevEventIndex.current >= 0) return
+    prevEventIndex.current = links.indexOf(currentEvent)
+  }, [currentEvent])
 
   const mapNumber = (number, numberMin, numberMax, mapFrom, mapTo) => {
     number = Math.min(numberMax, Math.max(number, numberMin))
@@ -306,17 +353,35 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
     indicator.style[propNames.width] = mapNumber(progress, 0, 1, currentWidth, targetWidth) + 'px'
 
     if (typeof onIndicatorMoveRef.current === 'function') {
-      const _prevIndex = links.indexOf(prevEvent.current)
-      let _targetIndex = links.indexOf(currentEvent)
+      const activeIndex = links.indexOf(currentEvent)
+      if (isInteracting.current) {
+        prevEventIndex.current = activeIndex
+      }
 
-      if (_prevIndex === _targetIndex) {
-        _targetIndex = direction === _targetIndex ? prevIndex : direction
+      const movementDir = direction - prevIndex
+      if (
+        (movementDir < 0 && prevEventIndex.current < activeIndex) ||
+        (movementDir > 0 && prevEventIndex.current > activeIndex)
+      ) {
+        prevEventIndex.current = prevIndex
+      }
+
+      let _targetIndex = isInteracting.current ? direction : activeIndex
+      let _prevIndex = isInteracting.current ? prevIndex : prevEventIndex.current
+
+      if (_prevIndex === activeIndex) {
+        _prevIndex = direction === activeIndex ? prevIndex : direction
+        _targetIndex = direction === activeIndex ? direction : prevIndex
       }
 
       const delta = _targetIndex - _prevIndex
       let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
       _progress = Math.min(1, Math.max(_progress, 0))
-      onIndicatorMoveRef.current({ target: indicatorRef.current.firstChild, progress: _progress })
+      onIndicatorMoveRef.current({
+        target: indicatorRef.current.firstChild,
+        progress: _progress,
+        isInteracting: isInteracting.current
+      })
     }
   }
 
@@ -344,7 +409,7 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
 
   useLayoutEffect(() => {
     const currIndex = links.indexOf(defaultKey)
-    _snapTo(currIndex, true)
+    snapTo(currIndex, true)
     moveIndicator(1, currIndex, currIndex)
   }, [links, indicatorRef])
 
@@ -361,21 +426,23 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
         return child
       })
     )
-  }, [children])
+  }, [children, paneClass])
+
+  const defaultStyle = {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: propValues.flexDirection,
+    flexGrow: '1',
+    overflow: 'auto',
+    WebkitOverFlowScrolling: 'auto'
+  }
 
   return (
     <div
       className={styles['tab-content']}
       ref={contentRef}
       onScroll={handleScroll}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        flexDirection: propValues.flexDirection,
-        flexGrow: '1',
-        overflow: 'auto',
-        WebkitOverFlowScrolling: 'auto'
-      }}
+      style={{ ...defaultStyle, ...style }}
       {...rest}
     >
       {_children}

@@ -67,6 +67,7 @@ class Animation {
       }
       if (timeFraction > 1) {
         timeFraction = 1
+        this.stopped = true
         if (this._events['end']) {
           this._emit('end', this.progress)
         }
@@ -144,7 +145,7 @@ export function useScrollSnap({
   const isInteracting = useRef(false)
   const animation = useRef(null)
   const snapPositionList = useRef([])
-  const activePosition = useRef({ top: 0, left: 0 })
+  const activePosition = useRef()
   const index = useRef(null)
   const swipe = useRef(null)
   const scrollStart = useRef(null)
@@ -215,8 +216,8 @@ export function useScrollSnap({
         activePosition.current = destination
       })
       animation.current.on('end', () => {
+        clearTimeout(timeOut.current)
         if (onSnap) onSnap(destination.index)
-        isInteracting.current = false
       })
       animation.current.start()
     },
@@ -286,6 +287,8 @@ export function useScrollSnap({
   )
 
   const findAPositionAndSnap = useCallback(() => {
+    if (!animation.current.stopped) return
+
     const scroll = getScrollPosition()
     const deltaLeft = (scrollStart.current?.left || activePosition.current.left) - scroll.left
     const deltaTop = (scrollStart.current?.top || activePosition.current.top) - scroll.top
@@ -315,9 +318,10 @@ export function useScrollSnap({
     (time) => {
       return (e) => {
         clearTimeout(timeOut.current)
-        if (isInteracting.current) {
+        if (isInteracting.current || !animation.current.stopped) {
           return
         }
+
         // Set a timeout to run after scrolling ends
         timeOut.current = setTimeout(() => {
           enableScroll()
@@ -330,8 +334,7 @@ export function useScrollSnap({
 
   const onInput = useCallback(
     (e) => {
-      animation.current?.stop()
-      isInteracting.current = false
+      console.log('wheel')
       enableScroll()
       onScrollEnd(66)()
     },
@@ -382,7 +385,7 @@ export function useScrollSnap({
     [onInputEnd]
   )
 
-  useEventListener('scroll', onScrollEnd(66), scrollContainerRef.current, { passive: true })
+  useEventListener('scroll', onScrollEnd(44), scrollContainerRef.current, { passive: true })
   useEventListener('touchstart', onTouchStart, scrollContainerRef.current, {
     passive: true
   })
@@ -421,12 +424,11 @@ export function useScrollSnap({
         scrollContainerRef.current.scrollTo({ top, left })
         return
       }
-      isInteracting.current = true
       snapToDestination(snapPositionList.current[index])
     },
     [snapToDestination, snapPositionList]
   )
-  return snapTo
+  return { snapTo, isInteracting }
 }
 
 export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-out') {
@@ -508,21 +510,20 @@ export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-o
 
       const boundry = getBoundryBox()
       const childRect = getRelativeBoundryBox(element)
-      let deltaX, deltaY
 
-      if (
-        (childRect.left > boundry.left && childRect.right > boundry.right) ||
-        (childRect.top > boundry.top && childRect.bottom > boundry.bottom)
-      ) {
-        deltaX = childRect.right - boundry.right + OFFSET.x
-        deltaY = childRect.bottom - boundry.bottom + OFFSET.y
-      } else if (
-        (childRect.left < boundry.left && childRect.right < boundry.right) ||
-        (childRect.top < boundry.top && childRect.bottom < boundry.bottom)
-      ) {
-        deltaX = childRect.left - boundry.left - OFFSET.x
-        deltaY = childRect.top - boundry.top - OFFSET.y
-      } else return
+      const deltaX =
+        childRect.left - OFFSET.x > boundry.left && childRect.right + OFFSET.x > boundry.right
+          ? childRect.right - boundry.right + OFFSET.x
+          : childRect.left - OFFSET.x < boundry.left && childRect.right + OFFSET.x < boundry.right
+          ? childRect.left - boundry.left - OFFSET.x
+          : 0
+
+      const deltaY =
+        childRect.top > boundry.top && childRect.bottom > boundry.bottom
+          ? childRect.bottom - boundry.bottom + OFFSET.y
+          : childRect.top < boundry.top && childRect.bottom < boundry.bottom
+          ? childRect.top - boundry.top - OFFSET.y
+          : 0
 
       const destination = { top: boundry.top + deltaY, left: boundry.left + deltaX }
       scrollToDestination(destination)
@@ -530,6 +531,7 @@ export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-o
     [containsChild, getBoundryBox, getRelativeBoundryBox, scrollToDestination]
   )
 }
+
 export function useEventListener(eventName, handler, element, options) {
   const _handler = useRef()
   useEffect(() => {
