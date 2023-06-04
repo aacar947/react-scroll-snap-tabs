@@ -40,7 +40,8 @@ function ScrollSnapTabs({
   defaultKey,
   eventKeys,
   style,
-  layout = 'vertical',
+  className,
+  layout,
   snapDuration,
   easing,
   indicatorClass,
@@ -108,7 +109,7 @@ function ScrollSnapTabs({
       }}
     >
       <div
-        className={styles.tabs}
+        className={[styles.tabs, className].join(' ').trim()}
         style={{
           display: 'flex',
           flexDirection: propValues.wrapperflexDirection,
@@ -127,20 +128,34 @@ function ScrollSnapTabs({
   )
 }
 
+ScrollSnapTabs.propTypes = {
+  defaultKey: PropTypes.string,
+  eventKeys: PropTypes.arrayOf(PropTypes.string),
+  layout: PropTypes.string,
+  snapDuration: PropTypes.number,
+  easing: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
+  indicatorClass: PropTypes.string,
+  indicatorStyle: PropTypes.object,
+  indicatorSize: PropTypes.string,
+  onIndicatorMove: PropTypes.func,
+  activeLinkClass: PropTypes.string,
+  activeLinkStyle: PropTypes.object
+}
+
 function Nav({
   eventKeys,
   className,
   activeLinkClass,
-  activeLinkStyle = { color: '#23527C' },
+  activeLinkStyle = { color: '#5A90E4' },
   indicatorColor,
   indicatorClass,
   indicatorSize,
   indicatorStyle,
   onIndicatorMove,
   children,
-  style = {},
-  linkStyle = {},
-  linkClass = '',
+  style,
+  linkStyle,
+  linkClass,
   __TYPE,
   ...rest
 }) {
@@ -286,7 +301,7 @@ Link.defaultProps = {
   __TYPE: 'Link'
 }
 
-function Content({ children, style, paneStyle, paneClass, ...rest }) {
+function Content({ children, style, paneStyle, paneClass, className, ...rest }) {
   const {
     eventHandler,
     indicatorRef,
@@ -439,7 +454,7 @@ function Content({ children, style, paneStyle, paneClass, ...rest }) {
 
   return (
     <div
-      className={styles['tab-content']}
+      className={[styles['tab-content'], className].join(' ').trim()}
       ref={contentRef}
       onScroll={handleScroll}
       style={{ ...defaultStyle, ...style }}
