@@ -1,12 +1,14 @@
 /* add css module styles here (optional) */
-.tab-content {
+.tab-content,
+.tab-nav {
   width: 100%;
   -ms-overflow-style: none; /*IE 11*/
   overflow: -moz-scrollbars-none; /*FF*/
+  scrollbar-width: none;
 }
-.tab-content::-webkit-scrollbar {
-  width: 0 !important;
-  background: transparent;
+.tab-content::-webkit-scrollbar,
+.tab-nav::-webkit-scrollbar {
+  display: none;
 }
 .tab-content > * {
   min-width: 100%;

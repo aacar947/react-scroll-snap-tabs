@@ -217,7 +217,12 @@ function Nav({
   }
 
   return (
-    <div ref={navContainerRef} style={{ ...style, ...defaultStyle }} className={className} {...rest}>
+    <div
+      ref={navContainerRef}
+      style={{ ...style, ...defaultStyle }}
+      className={[styles['tab-nav'], className].join(' ').trim()}
+      {...rest}
+    >
       {_children || (eventKeys && eventKeys.map(createNavLinks))}
       <div
         style={{
