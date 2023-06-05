@@ -189,6 +189,7 @@ export function useScrollSnap({
 
   const snapToDestination = useCallback(
     (destination, currentPosition) => {
+      if (!destination) return
       currentPosition = currentPosition || getScrollPosition()
       const xDist = destination.left - currentPosition.left
       const yDist = destination.top - currentPosition.top

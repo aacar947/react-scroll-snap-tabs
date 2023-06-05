@@ -45,11 +45,19 @@ function ScrollSnapTabs({
   snapDuration,
   easing,
   indicatorClass,
+  indicatorColor,
   indicatorStyle,
   indicatorSize,
   onIndicatorMove,
   activeLinkClass,
   activeLinkStyle,
+  indicatorParentStyle,
+  indicatorParentClass,
+  scrollIntoViewDuration,
+  scrollIntoViewEasing,
+  scrollIntoViewOffset,
+  linkStyle,
+  linkClass,
   ...rest
 }) {
   const propValues = layout === 'horizontal' ? LAYOUT_PROP_VALUES.horizontal : LAYOUT_PROP_VALUES.vertical
@@ -69,21 +77,6 @@ function ScrollSnapTabs({
     }
   }, [events, setCurrentEvent])
 
-  const _children = useMemo(() => {
-    return (
-      children &&
-      React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.props.__TYPE === 'Nav') {
-          return React.cloneElement(child, {
-            activeLinkStyle: child.props.activeLinkStyle || activeLinkStyle,
-            activeLinkClass: activeLinkClass || child.props.activeLinkClass
-          })
-        }
-        return child
-      })
-    )
-  }, [children, activeLinkClass])
-
   return (
     <TabProvider.Provider
       value={{
@@ -97,10 +90,20 @@ function ScrollSnapTabs({
         propValues,
         propNames,
         defaultKey: defaultKey || events[0],
-        indicatorOptions: {
+        navOptions: {
           indicatorClass,
           indicatorStyle,
-          indicatorSize
+          indicatorColor,
+          activeLinkClass,
+          activeLinkStyle,
+          indicatorParentStyle,
+          indicatorParentClass,
+          indicatorSize,
+          scrollIntoViewDuration,
+          scrollIntoViewEasing,
+          scrollIntoViewOffset,
+          linkStyle,
+          linkClass
         },
         options: {
           duration: snapDuration,
@@ -119,10 +122,8 @@ function ScrollSnapTabs({
         }}
         {...rest}
       >
-        {eventKeys && (
-          <Nav activeLinkClass={activeLinkClass} activeLinkStyle={activeLinkStyle} eventKeys={eventKeys} />
-        )}
-        {_children}
+        {eventKeys && <Nav eventKeys={eventKeys} />}
+        {children}
       </div>
     </TabProvider.Provider>
   )
@@ -135,23 +136,33 @@ ScrollSnapTabs.propTypes = {
   snapDuration: PropTypes.number,
   easing: PropTypes.oneOfType([PropTypes.func, PropTypes.string]),
   indicatorClass: PropTypes.string,
+  indicatorParentClass: PropTypes.string,
   indicatorStyle: PropTypes.object,
+  indicatorParentStyle: PropTypes.object,
   indicatorSize: PropTypes.string,
   onIndicatorMove: PropTypes.func,
   activeLinkClass: PropTypes.string,
-  activeLinkStyle: PropTypes.object
+  activeLinkStyle: PropTypes.object,
+  scrollIntoViewDuration: PropTypes.number,
+  scrollIntoViewEasing: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
+  scrollIntoViewOffset: PropTypes.number
 }
 
 function Nav({
   eventKeys,
   className,
   activeLinkClass,
-  activeLinkStyle = { color: '#5A90E4' },
+  activeLinkStyle,
   indicatorColor,
   indicatorClass,
   indicatorSize,
   indicatorStyle,
   onIndicatorMove,
+  indicatorParentStyle,
+  indicatorParentClass,
+  scrollIntoViewDuration,
+  scrollIntoViewEasing,
+  scrollIntoViewOffset,
   children,
   style,
   linkStyle,
@@ -163,7 +174,7 @@ function Nav({
     indicatorRef,
     propValues,
     propNames,
-    indicatorOptions,
+    navOptions,
     linkMapRef,
     eventHandler,
     onIndicatorMoveRef,
@@ -171,16 +182,20 @@ function Nav({
   } = useContext(TabProvider)
   const navContainerRef = useRef()
   const [currentEvent] = eventHandler
-  const scrollIntoRelativeView = useScrollIntoView(navContainerRef)
+  const scrollIntoRelativeView = useScrollIntoView(
+    navContainerRef,
+    scrollIntoViewDuration || navOptions.scrollIntoViewDuration,
+    scrollIntoViewEasing || navOptions.scrollIntoViewEasing
+  )
   const createNavLinks = (event, i) => {
     return (
       <Link
         key={i}
         eventKey={event}
-        style={linkStyle}
-        className={linkClass}
-        activeStyle={activeLinkStyle}
-        activeClass={activeLinkClass}
+        style={{ ...navOptions.linkStyle, ...linkStyle }}
+        className={linkClass || navOptions.linkClass}
+        activeStyle={{ color: '#5A90E4', ...navOptions.activeLinkStyle, ...activeLinkStyle }}
+        activeClass={activeLinkClass || navOptions.activeLinkClass}
       />
     )
   }
@@ -190,18 +205,25 @@ function Nav({
   }, [])
 
   useEffect(() => {
-    scrollIntoRelativeView(linkMapRef.current.get(currentEvent), 100)
-  }, [currentEvent, scrollIntoRelativeView])
+    scrollIntoRelativeView(
+      linkMapRef.current.get(currentEvent),
+      scrollIntoViewOffset || navOptions.scrollIntoViewOffset || 100
+    )
+  }, [currentEvent, scrollIntoRelativeView, scrollIntoViewOffset])
   const _children = useMemo(() => {
     return (
       children &&
       React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.props.__TYPE === 'Link') {
           return React.cloneElement(child, {
-            style: { ...child.props.style, ...linkStyle },
-            className: [child.props.className, linkClass].join(' ').trim(),
-            activeClass: child.props.activeClass || activeLinkClass,
-            activeStyle: child.props.activeStyle || activeLinkStyle
+            style: { ...linkStyle, ...navOptions.linkStyle, ...child.props.style },
+            className: [child.props.className, linkClass, navOptions.linkClass].join(' ').trim(),
+            activeClass: child.props.activeClass || activeLinkClass || navOptions.activeLinkClass,
+            activeStyle: {
+              ...navOptions.activeLinkStyle,
+              ...activeLinkStyle,
+              ...child.props.activeStyle
+            }
           })
         }
         return child
@@ -228,19 +250,22 @@ function Nav({
         style={{
           position: 'absolute',
           bottom: propValues.indicatorBottom,
-          right: propValues.indicatorRight
+          right: propValues.indicatorRight,
+          ...navOptions.indicatorParentStyle,
+          ...indicatorParentStyle
         }}
+        className={indicatorParentClass || navOptions.indicatorParentClass}
         ref={indicatorRef}
       >
         <div
-          className={indicatorClass || indicatorOptions.indicatorClass || ''}
+          className={indicatorClass || navOptions.indicatorClass || ''}
           style={{
-            width: (layout === 'horizontal' && '100%') || indicatorSize || indicatorOptions.indicatorSize,
-            height: (layout === 'horizontal' && indicatorSize) || indicatorOptions.indicatorSize || '100%',
+            width: layout === 'horizontal' ? '100%' : indicatorSize || navOptions.indicatorSize,
+            height: layout === 'horizontal' ? indicatorSize || navOptions.indicatorSize : '100%',
             margin: 'auto ',
             [propNames.minHeight]: '3px',
-            backgroundColor: indicatorColor || 'black',
-            ...indicatorOptions.indicatorStyle,
+            backgroundColor: indicatorColor || navOptions.indicatorColor || 'black',
+            ...navOptions.indicatorStyle,
             ...indicatorStyle
           }}
         />
@@ -259,6 +284,9 @@ Nav.propTypes = {
   onIndicatorMove: PropTypes.func,
   linkStyle: PropTypes.object,
   linkClass: PropTypes.string,
+  scrollIntoViewDuration: PropTypes.number,
+  scrollIntoViewEasing: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
+  scrollIntoViewOffset: PropTypes.number,
   __TYPE: PropTypes.string
 }
 
@@ -299,6 +327,7 @@ function Link({ eventKey, className, children, style, activeStyle, activeClass, 
 Link.propTypes = {
   eventKey: PropTypes.string,
   activeStyle: PropTypes.object,
+  activeClass: PropTypes.string,
   __TYPE: PropTypes.string
 }
 
@@ -439,7 +468,7 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
       React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.props.__TYPE === 'Pane') {
           return React.cloneElement(child, {
-            style: { ...child.props.style, ...paneStyle },
+            style: { ...paneStyle, ...child.props.style },
             className: [child.props.className, paneClass].join(' ').trim()
           })
         }
