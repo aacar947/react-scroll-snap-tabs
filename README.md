@@ -270,7 +270,6 @@ You can use predefined easing functions by providing either "ease-in", "ease-out
 
 ## How Indicator Works
 
-How the Indicator Works:
 When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the corresponding link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
 
 To provide a visual representation of this behavior, consider the following HTML code, which showcases a rendered indicator parent and indicator elements in a vertical layout application:
