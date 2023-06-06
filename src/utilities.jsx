@@ -1,7 +1,7 @@
 /* eslint-disable dot-notation */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable prettier/prettier */
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
 
 const defaultOptions = {
   duration: 300,
@@ -384,28 +384,89 @@ export function useScrollSnap({
     [onInputEnd]
   )
 
-  useEventListener('scroll', onScrollEnd(44), scrollContainerRef.current, { passive: true })
-  useEventListener('touchstart', onTouchStart, scrollContainerRef.current, {
-    passive: true
+  const passiveSupported = useMemo(() => {
+    let supported = false
+
+    try {
+      const options = {
+        get passive() {
+          // This function will be called when the browser
+          // attempts to access the passive property.
+          supported = true
+          return false
+        }
+      }
+
+      window.addEventListener('test', null, options)
+      window.removeEventListener('test', null, options)
+    } catch (err) {
+      console.warn('window.addEventListener() does not support passive option')
+    }
+    return supported
   })
-  useEventListener('touchend', onTouchEnd, scrollContainerRef.current, {
-    passive: true
-  })
-  useEventListener('keydown', onInputStart, scrollContainerRef.current, {
-    passive: true
-  })
-  useEventListener('keyup', onInputEnd, scrollContainerRef.current, {
-    passive: true
-  })
-  useEventListener('mousedown', onInputStart, scrollContainerRef.current, {
-    passive: true
-  })
-  useEventListener('mouseup', onInputEnd, scrollContainerRef.current, {
-    passive: true
-  })
-  useEventListener('wheel', onInput, scrollContainerRef.current, {
-    passive: true
-  })
+
+  useEventListener(
+    'scroll',
+    onScrollEnd(44),
+    scrollContainerRef.current,
+    passiveSupported && { passive: true }
+  )
+  useEventListener(
+    'touchstart',
+    onTouchStart,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'touchend',
+    onTouchEnd,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'keydown',
+    onInputStart,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'keyup',
+    onInputEnd,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'mousedown',
+    onInputStart,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'mouseup',
+    onInputEnd,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
+  useEventListener(
+    'wheel',
+    onInput,
+    scrollContainerRef.current,
+    passiveSupported && {
+      passive: true
+    }
+  )
   useEventListener(
     'resize',
     () =>
