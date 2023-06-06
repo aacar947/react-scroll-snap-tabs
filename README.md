@@ -110,6 +110,7 @@ const App = () => {
 
 export default App
 ```
+![AdvancedScrollSnapTabs](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/23f28a1f-d89e-4c81-b728-ea2008a74ffd)
 
 ## Props
 
