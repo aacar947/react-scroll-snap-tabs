@@ -508,7 +508,9 @@ export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-o
     return {
       ...scroll,
       bottom: scroll.top + container.clientHeight,
-      right: scroll.left + container.clientWidth
+      right: scroll.left + container.clientWidth,
+      scrollWidth: container.scrollWidth - container.clientWidth,
+      scrollHeight: container.scrollHeight - container.clientHeight
     }
   }, [getScrollPosition, containerRef])
 
@@ -584,8 +586,10 @@ export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-o
           : childRect.top < boundry.top && childRect.bottom < boundry.bottom
           ? childRect.top - boundry.top - OFFSET.y
           : 0
-
-      const destination = { top: boundry.top + deltaY, left: boundry.left + deltaX }
+      const top = Math.max(0, Math.min(boundry.top + deltaY, boundry.scrollHeight))
+      const left = Math.max(0, Math.min(boundry.left + deltaX, boundry.scrollWidth))
+      console.log({ top, left, boundry })
+      const destination = { top, left }
       scrollToDestination(destination)
     },
     [containsChild, getBoundryBox, getRelativeBoundryBox, scrollToDestination]
