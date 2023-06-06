@@ -32,7 +32,7 @@ class Animation {
         break
     }
     this.options = _options
-    this.stopped = false
+    this.stopped = true
     this.started = false
     this._events = {}
   }
@@ -322,7 +322,6 @@ export function useScrollSnap({
         if (isInteracting.current || !animation.current.stopped) {
           return
         }
-
         // Set a timeout to run after scrolling ends
         timeOut.current = setTimeout(() => {
           enableScroll()
@@ -335,7 +334,6 @@ export function useScrollSnap({
 
   const onInput = useCallback(
     (e) => {
-      console.log('wheel')
       enableScroll()
       onScrollEnd(66)()
     },
