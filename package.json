@@ -1,7 +1,7 @@
 {
   "name": "react-scroll-snap-tabs",
   "version": "1.0.0",
-  "description": "This is a react component package that adds a touch device friendly tabs component.",
+  "description": "The Scroll Snap Tabs Component for React.js is a versatile and interactive component designed to provide a seamless tab navigation experience, specifically optimized for touch devices",
   "author": "aacar947",
   "license": "MIT",
   "repository": "aacar947/react-scroll-snap-tabs",
