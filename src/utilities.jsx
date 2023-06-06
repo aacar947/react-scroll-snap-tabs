@@ -274,7 +274,7 @@ export function useScrollSnap({
 
   const isSwipeTresholdExceeded = useCallback(
     (deltaLeft, deltaTop) => {
-      if (deltaLeft === 0 && deltaTop === 0) return false
+      if (Math.abs(deltaLeft) <= 5 && Math.abs(deltaTop) <= 5) return false
       const calcWithInertia = () => {
         const DEC = 625 * Math.pow(10, -6)
         const speed =
