@@ -130,7 +130,7 @@ export default App
 | linkClass              | string           |                    | Assigns a class name to all of the link components in the navigation component.                                                                                                                                                                                                |
 | linkStyle              | object           |                    | Applies styles to all of the link components in the navigation component.                                                                                                                                                                                                      |
 | onIndicatorMove        | func             |                    | When the indicator element moves, the onIndicatorMove callback function is triggered along with the movement.                                                                                                                                                                  |
-| scrollIntoViewEasing   | string           | function           | Sets the easing function for scroll into view animation. The value should be either "ease-in", "ease-out", or "ease-in-out". If a random string value is provided, the default easing function will be (t) => t (linear).                                                      |
+| scrollIntoViewEasing   | string \| func   | "ease-out"         | Sets the easing function for scroll into view animation. The value should be either "ease-in", "ease-out", or "ease-in-out". If a random string value is provided, the default easing function will be (t) => t (linear).                                                      |
 | scrollIntoViewDuration | number           | 250                | Sets the duration in ms for the scroll into view animation.                                                                                                                                                                                                                    |
 | scrollIntoViewOffset   | number           | 100                | Sets an additional scroll offset for the scroll into view animation.                                                                                                                                                                                                           |
 | snapDuration           | number           | 250                | Sets the duration in ms for the scroll snap animation.                                                                                                                                                                                                                         |
@@ -284,6 +284,7 @@ To provide a visual representation of this behavior, consider the following HTML
   ></div>
 </div>
 ```
+
 ![IndicatorScrollSnapTabs2](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/c4802e76-efa1-456c-aabe-9cfbf9ff3e0a)
 
 In the provided code, the indicator parent element is represented by the \<div> with the class name 'indicator-parent'. It is positioned absolutely and has a red border. Its left and width values are adjusted dynamically based on the corresponding link element's left and width values.
