@@ -43,8 +43,8 @@ function ScrollSnapTabs({
   className,
   layout,
   snapDuration,
-  snapTreshold,
-  swipeTreshold,
+  snapThreshold,
+  swipeThreshold,
   easing,
   indicatorClass,
   indicatorColor,
@@ -110,8 +110,8 @@ function ScrollSnapTabs({
         options: {
           duration: snapDuration,
           easing,
-          treshold: snapTreshold,
-          swipeTreshold
+          threshold: snapThreshold,
+          swipeThreshold
         }
       }}
     >

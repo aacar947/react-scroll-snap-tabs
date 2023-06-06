@@ -134,8 +134,8 @@ let CONTAINER_INDEX = 0
 export function useScrollSnap({
   scrollContainerRef,
   childrenSelector = '> div',
-  treshold = 30,
-  swipeTreshold = 200,
+  threshold = 30,
+  swipeThreshold = 200,
   easing = 'ease-out',
   duration = 250,
   onSnapStart,
@@ -279,12 +279,12 @@ export function useScrollSnap({
         const DEC = 625 * Math.pow(10, -6)
         const speed =
           swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed
-        return (speed * speed) / (2 * DEC) > swipeTreshold
+        return (speed * speed) / (2 * DEC) > swipeThreshold
       }
 
-      return Math.abs(deltaTop) > swipeTreshold || Math.abs(deltaLeft) > swipeTreshold || calcWithInertia()
+      return Math.abs(deltaTop) > swipeThreshold || Math.abs(deltaLeft) > swipeThreshold || calcWithInertia()
     },
-    [swipeTreshold]
+    [swipeThreshold]
   )
 
   const findAPositionAndSnap = useCallback(() => {
@@ -297,7 +297,7 @@ export function useScrollSnap({
     let destination
     const tresholdExceeded = swipe.current
       ? isSwipeTresholdExceeded(deltaLeft, deltaTop)
-      : Math.abs(deltaLeft) > treshold || Math.abs(deltaTop) > treshold
+      : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold
 
     if (tresholdExceeded) {
       const snapPosition = getSnapPosition(deltaLeft, deltaTop)
@@ -307,7 +307,7 @@ export function useScrollSnap({
     }
 
     snapToDestination(destination, scroll)
-  }, [getScrollPosition, isSwipeTresholdExceeded, treshold, getSnapPosition, snapToDestination])
+  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, snapToDestination])
 
   const enableScroll = useCallback(() => {
     const container = scrollContainerRef.current
