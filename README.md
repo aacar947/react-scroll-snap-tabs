@@ -284,6 +284,7 @@ To provide a visual representation of this behavior, consider the following HTML
   ></div>
 </div>
 ```
+![IndicatorScrollSnapTabs2](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/c4802e76-efa1-456c-aabe-9cfbf9ff3e0a)
 
 In the provided code, the indicator parent element is represented by the \<div> with the class name 'indicator-parent'. It is positioned absolutely and has a red border. Its left and width values are adjusted dynamically based on the corresponding link element's left and width values.
 
