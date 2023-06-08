@@ -91,7 +91,6 @@ const App = () => {
           }}
           style={{ color: 'gray', backgroundColor: 'black', borderRadius: '5px' }}
           onIndicatorMove={onIndicatorMove}
-          className='tab-nav'
         >
           <Tabs.Link eventKey='tab1'>Tab 1</Tabs.Link>
           <Tabs.Link eventKey='tab2'>Very Long Tab 2</Tabs.Link>
