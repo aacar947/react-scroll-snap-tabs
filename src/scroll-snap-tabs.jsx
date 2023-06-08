@@ -486,8 +486,7 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
     display: 'flex',
     flexDirection: propValues.flexDirection,
     flexGrow: '1',
-    overflow: 'auto',
-    WebkitOverFlowScrolling: 'auto'
+    overflow: 'auto'
   }
 
   return (
