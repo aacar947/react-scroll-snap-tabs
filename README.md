@@ -258,7 +258,7 @@ const App = () => {
     <div style={{ width: '400px', height: '100vh', backgroundColor: '#333' }}>
       <Tabs
         style={{ borderRight: '1px solid gray' }}
-         onIndicatorMove={onIndicatorMove}
+        onIndicatorMove={onIndicatorMove}
         snapDuration={300}
         defaultKey='tab3'
       >
