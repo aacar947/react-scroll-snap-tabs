@@ -203,7 +203,7 @@ In the navigation component, you can utilize the same props as described previou
 | :---------- | :----- | :------ | :------------------------------------------------------------------------------ |
 | activeClass | string |         | The class name to be applied to the link when it's active.                      |
 | activeStyle | object |         | The style to be applied to the link when it is active.                          |
-| eventKey    | string |         | The event name that corresponds to the pane component with the same event name. |
+| eventKey    | string |         | The event key that corresponds to the pane component with the same event key. |
 
 ## Content Component Props
 
@@ -216,7 +216,7 @@ In the navigation component, you can utilize the same props as described previou
 
 | Name     | Type   | Default | Description                                                                     |
 | :------- | :----- | :------ | :------------------------------------------------------------------------------ |
-| eventKey | string |         | The event name that corresponds to the link component with the same event name. |
+| eventKey | string |         | The event key that corresponds to the link component with the same event key. |
 
 ## Easing Function
 
