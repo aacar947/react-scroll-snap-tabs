@@ -329,6 +329,36 @@ export default App
 
 ## How Indicator Works
 
+Example
+```jsx
+import React from 'react'
+
+import Tabs from 'react-scroll-snap-tabs'
+import 'react-scroll-snap-tabs/dist/index.css'
+
+const App = () => {
+  return (
+    <div style={{ width: '400px', height: '100vh', border: '1px solid gray' }}>
+      <Tabs
+        indicatorParentClass='indicator-parent'
+        indicatorParentStyle={{ border: '1px solid red' }}
+        indicatorClass='indicator'
+        indicatorStyle={{ maxWidth: '75%' }}
+        linkClass='link'
+        eventKeys={['Tab 1', 'Very Long Tab 2']}
+      >
+        <Tabs.Content paneStyle={{ border: '1px solid gray' }}>
+          <Tabs.Pane eventKey='Tab 1'>Content 1</Tabs.Pane>
+          <Tabs.Pane eventKey='Very Long Tab 2'>Content 2</Tabs.Pane>
+        </Tabs.Content>
+      </Tabs>
+    </div>
+  )
+}
+
+export default App
+```
+
 When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the target link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
 
 To provide a visual representation of this behavior, consider the following HTML code, which showcases a rendered indicator parent and indicator elements in a vertical layout application:
