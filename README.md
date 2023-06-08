@@ -76,7 +76,6 @@ const App = () => {
       <Tabs
         style={{ borderRight: '1px solid gray' }}
         snapDuration={250}
-        easing='ease-in-out'
         indicatorSize='20px'
         defaultKey='tab3'
       >
