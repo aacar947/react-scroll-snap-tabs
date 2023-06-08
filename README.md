@@ -75,8 +75,7 @@ const App = () => {
     <div style={{ width: '400px', height: '100vh', backgroundColor: '#333' }}>
       <Tabs
         style={{ borderRight: '1px solid gray' }}
-        snapDuration={250}
-        indicatorSize='20px'
+        snapDuration={300}
         defaultKey='tab3'
       >
         <Tabs.Nav
