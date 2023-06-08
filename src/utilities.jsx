@@ -588,7 +588,6 @@ export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-o
           : 0
       const top = Math.max(0, Math.min(boundry.top + deltaY, boundry.scrollHeight))
       const left = Math.max(0, Math.min(boundry.left + deltaX, boundry.scrollWidth))
-      console.log({ top, left, boundry })
       const destination = { top, left }
       scrollToDestination(destination)
     },
