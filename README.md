@@ -14,8 +14,8 @@
 1. [Link Component Props](#link-component-props)
 1. [Content Component Props](#content-component-props)
 1. [Pane Component Props](#pane-component-props)
-1. [onIndicatorMove Event](#onindicatormove-event)
 1. [Easing Function](#easing-function)
+1. [onIndicatorMove Event](#onindicatormove-event)
 1. [How Indicator Works](#how-indicator-works)
 
 ## Install
@@ -25,6 +25,8 @@ npm install --save react-scroll-snap-tabs
 ```
 
 ## Basic Usage
+
+Note that, in order to prevent unexpected behaviors, the order of links and panes should exactly match based on their eventKeys.
 
 ```jsx
 import React, { Component } from 'react'
@@ -47,6 +49,9 @@ const App = () => {
 
 export default App
 ```
+
+Result:
+
 ![BasicScrollSnapTabs2](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/ca7b7508-c7f3-421f-a513-15a69884f9bc)
 
 ## Advanced Usage
@@ -58,7 +63,7 @@ import Tabs from 'react-scroll-snap-tabs'
 import 'react-scroll-snap-tabs/dist/index.css'
 
 const App = () => {
-    const width = 10
+  const width = 10
   const onIndicatorMove = (e) => {
     const indicator = e.target
     const timing = (t) => -12 * (t - 0.5) * (t - 0.5) + 4
@@ -67,50 +72,83 @@ const App = () => {
   }
 
   return (
-    <div style={{ width: '400px', height: '100vh' }}>
+    <div style={{ width: '400px', height: '100vh', backgroundColor: '#333' }}>
       <Tabs
         style={{ borderRight: '1px solid gray' }}
-        snapDuration={300}
+        snapDuration={250}
+        easing='ease-in-out'
+        indicatorSize='20px'
         defaultKey='tab3'
       >
         <Tabs.Nav
-          activeLinkStyle={{ color: '#23527C', backgroundColor: 'ghostwhite' }}
+          activeLinkStyle={{ color: 'white' }}
+          linkStyle={{ whiteSpace: 'nowrap' }}
           indicatorStyle={{
             borderRadius: '3px',
             width: width + 'px',
             maxWidth: '100%',
-            zIndex: 999,
-            backgroundColor: '#333'
+            backgroundColor: 'orange'
           }}
-          linkStyle={{ whiteSpace: 'nowrap' }}
-          style={{ color: 'gray' }}
+          style={{ color: 'gray', backgroundColor: 'black', borderRadius: '5px' }}
           onIndicatorMove={onIndicatorMove}
           className='tab-nav'
         >
           <Tabs.Link eventKey='tab1'>Tab 1</Tabs.Link>
-          <Tabs.Link eventKey='tab2'>Tab 2</Tabs.Link>
-          <Tabs.Link eventKey='tab3'>Long Tab Name 3</Tabs.Link>
+          <Tabs.Link eventKey='tab2'>Very Long Tab 2</Tabs.Link>
+          <Tabs.Link eventKey='tab3'>Tab 3</Tabs.Link>
+          <Tabs.Link eventKey='tab4'>Very Long Tab 4</Tabs.Link>
+          <Tabs.Link eventKey='tab5'>Very Long Tab 5</Tabs.Link>
         </Tabs.Nav>
         <Tabs.Content
           style={{ overscrollBehaviorY: 'contain' }}
           paneStyle={{ minHeight: '100%', minWidth: '100%' }}
         >
           <Tabs.Pane eventKey='tab1'>
-            <CustomComponent color='#B3C890'>Content 1</CustomComponent>
+            <CustomComponent color='white'>Content 1</CustomComponent>
           </Tabs.Pane>
           <Tabs.Pane eventKey='tab2'>
-            <CustomComponent color='#73A9AD'>Content 2</CustomComponent>
+            <CustomComponent color='white'>Content 2</CustomComponent>
           </Tabs.Pane>
           <Tabs.Pane eventKey='tab3'>
-            <CustomComponent color='#F5F0BB'>Content 3</CustomComponent>
+            <CustomComponent color='white'>Content 3</CustomComponent>
+          </Tabs.Pane>
+          <Tabs.Pane eventKey='tab4'>
+            <CustomComponent color='white'>Content 4</CustomComponent>
+          </Tabs.Pane>
+          <Tabs.Pane eventKey='tab5'>
+            <CustomComponent color='white'>Content 5</CustomComponent>
           </Tabs.Pane>
         </Tabs.Content>
       </Tabs>
     </div>
+  )
+}
+
+function CustomComponent({ children, color }) {
+  return (
+    <div
+      style={{
+        backgroundColor: 'transparent',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontStyle: 'bold',
+        fontSize: '3vw',
+        width: '100%',
+        height: '100%',
+        color
+      }}
+    >
+      {children}
+    </div>
+  )
 }
 
 export default App
 ```
+
+Result:
+
 ![AdvancedScrollSnapTabs](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/23f28a1f-d89e-4c81-b728-ea2008a74ffd)
 
 ## Props
@@ -180,15 +218,19 @@ In the navigation component, you can utilize the same props as described previou
 | :------- | :----- | :------ | :------------------------------------------------------------------------------ |
 | eventKey | string |         | The event name that corresponds to the link component with the same event name. |
 
+## Easing Function
+
+You can use predefined easing functions by providing either "ease-in", "ease-out", or "ease-in-out" string values. If a random string value is provided, the default easing function will be (t) => t (linear). Alternatively, you can provide your own easing function that accepts a number argument between 0 and 1 and returns a number between 0 and 1. You can find more about easing functions on [easings.net](https://easings.net/#).
+
 ## onIndicatorMove Event
 
 When the indicator element moves, the onIndicatorMove callback function is triggered along with the movement.
 
-### Event Properties
+### Event Properties:
 
 ### `Event.progress`
 
-It is a fractional value between two snap points that ranges from 0 to 1. The current snap point, representing the current content, is 0, and the next snap point is 1.
+It is a fractional value between two snap points that ranges from 0 to 1. The current snap point, representing the current content, is 0, and the target snap point is 1.
 
 ### `Event.target`
 
@@ -264,14 +306,9 @@ const App = () => {
 export default App
 ```
 
-## Easing Function
-
-You can use predefined easing functions by providing either "ease-in", "ease-out", or "ease-in-out" string values. If a random string value is provided, the default easing function will be (t) => t (linear). Alternatively, you can provide your own easing function that accepts a number argument between 0 and 1 and returns a number between 0 and 1. You can find more about easing functions on [easings.net](https://easings.net/#).
-
 ## How Indicator Works
 
-How the Indicator Works:
-When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the corresponding link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
+When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the target link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
 
 To provide a visual representation of this behavior, consider the following HTML code, which showcases a rendered indicator parent and indicator elements in a vertical layout application:
 
