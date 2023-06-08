@@ -329,7 +329,7 @@ export default App
 
 ## How Indicator Works
 
-Example
+### Example
 ```jsx
 import React from 'react'
 
@@ -374,6 +374,8 @@ To provide a visual representation of this behavior, consider the following HTML
   ></div>
 </div>
 ```
+
+Result:
 
 ![IndicatorScrollSnapTabs2](https://github.com/aacar947/react-scroll-snap-tabs/assets/90392197/c4802e76-efa1-456c-aabe-9cfbf9ff3e0a)
 
