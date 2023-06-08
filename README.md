@@ -344,7 +344,6 @@ const App = () => {
         indicatorParentStyle={{ border: '1px solid red' }}
         indicatorClass='indicator'
         indicatorStyle={{ maxWidth: '75%' }}
-        linkClass='link'
         eventKeys={['Tab 1', 'Very Long Tab 2']}
       >
         <Tabs.Content paneStyle={{ border: '1px solid gray' }}>
