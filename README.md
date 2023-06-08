@@ -29,7 +29,7 @@ npm install --save react-scroll-snap-tabs
 Note that, in order to prevent unexpected behaviors, the order of links and panes should exactly match based on their eventKeys.
 
 ```jsx
-import React, { Component } from 'react'
+import React from 'react'
 
 import Tabs from 'react-scroll-snap-tabs'
 import 'react-scroll-snap-tabs/dist/index.css'
@@ -57,7 +57,7 @@ Result:
 ## Advanced Usage
 
 ```jsx
-import React, { Component } from 'react'
+import React from 'react'
 
 import Tabs from 'react-scroll-snap-tabs'
 import 'react-scroll-snap-tabs/dist/index.css'
@@ -240,7 +240,7 @@ Returns a boolean value indicating whether or not the user is interacting with t
 ### Example
 
 ```jsx
-import React, { Component } from 'react'
+import React from 'react'
 
 import Tabs from 'react-scroll-snap-tabs'
 import 'react-scroll-snap-tabs/dist/index.css'
@@ -255,47 +255,71 @@ const App = () => {
   }
 
   return (
-    <div style={{ width: '400px', height: '100vh' }}>
+    <div style={{ width: '400px', height: '100vh', backgroundColor: '#333' }}>
       <Tabs
         style={{ borderRight: '1px solid gray' }}
-        snapDuration={250}
-        easing='ease-in-out'
-        indicatorSize='20px'
+         onIndicatorMove={onIndicatorMove}
+        snapDuration={300}
         defaultKey='tab3'
-        onIndicatorMove={onIndicatorMove}
       >
         <Tabs.Nav
-          activeLinkStyle={{ color: '#23527C', backgroundColor: 'ghostwhite' }}
+          activeLinkStyle={{ color: 'white' }}
+          linkStyle={{ whiteSpace: 'nowrap' }}
           indicatorStyle={{
             borderRadius: '3px',
             width: width + 'px',
             maxWidth: '100%',
-            zIndex: 999,
-            backgroundColor: '#333'
+            backgroundColor: 'orange'
           }}
-          linkStyle={{ whiteSpace: 'nowrap' }}
-          style={{ color: 'gray' }}
-          className='tab-nav'
+          style={{ color: 'gray', backgroundColor: 'black', borderRadius: '5px' }}
         >
           <Tabs.Link eventKey='tab1'>Tab 1</Tabs.Link>
-          <Tabs.Link eventKey='tab2'>Tab 2</Tabs.Link>
-          <Tabs.Link eventKey='tab3'>Long Tab Name 3</Tabs.Link>
+          <Tabs.Link eventKey='tab2'>Very Long Tab 2</Tabs.Link>
+          <Tabs.Link eventKey='tab3'>Tab 3</Tabs.Link>
+          <Tabs.Link eventKey='tab4'>Very Long Tab 4</Tabs.Link>
+          <Tabs.Link eventKey='tab5'>Very Long Tab 5</Tabs.Link>
         </Tabs.Nav>
         <Tabs.Content
           style={{ overscrollBehaviorY: 'contain' }}
           paneStyle={{ minHeight: '100%', minWidth: '100%' }}
         >
           <Tabs.Pane eventKey='tab1'>
-            <CustomComponent color='#B3C890'>Content 1</CustomComponent>
+            <CustomComponent color='white'>Content 1</CustomComponent>
           </Tabs.Pane>
           <Tabs.Pane eventKey='tab2'>
-            <CustomComponent color='#73A9AD'>Content 2</CustomComponent>
+            <CustomComponent color='white'>Content 2</CustomComponent>
           </Tabs.Pane>
           <Tabs.Pane eventKey='tab3'>
-            <CustomComponent color='#F5F0BB'>Content 3</CustomComponent>
+            <CustomComponent color='white'>Content 3</CustomComponent>
+          </Tabs.Pane>
+          <Tabs.Pane eventKey='tab4'>
+            <CustomComponent color='white'>Content 4</CustomComponent>
+          </Tabs.Pane>
+          <Tabs.Pane eventKey='tab5'>
+            <CustomComponent color='white'>Content 5</CustomComponent>
           </Tabs.Pane>
         </Tabs.Content>
       </Tabs>
+    </div>
+  )
+}
+
+function CustomComponent({ children, color }) {
+  return (
+    <div
+      style={{
+        backgroundColor: 'transparent',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontStyle: 'bold',
+        fontSize: '3vw',
+        width: '100%',
+        height: '100%',
+        color
+      }}
+    >
+      {children}
     </div>
   )
 }
