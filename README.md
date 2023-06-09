@@ -4,7 +4,7 @@
 
 [![NPM](https://img.shields.io/npm/v/react-scroll-snap-tabs.svg)](https://www.npmjs.com/package/react-scroll-snap-tabs) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
-<a href="https://www.buymeacoffee.com/aacar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 30px !important;width: 109px !important;" ></a>
+<a href="https://www.buymeacoffee.com/aacar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 48px !important;width: 174px !important;" ></a>
 
 ## Table Of Contents
 
