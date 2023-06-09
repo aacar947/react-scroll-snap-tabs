@@ -141,7 +141,7 @@ export function useScrollSnap({
   onSnapStart,
   onSnap
 }) {
-  const [windowDimension, setWindowDimension] = useState(null)
+  const [windowSize, setWindowSize] = useState(null)
   const isInteracting = useRef(false)
   const animation = useRef(null)
   const snapPositionList = useRef([])
@@ -175,9 +175,17 @@ export function useScrollSnap({
       reduceToSnapPositions,
       []
     )
+    if (!activePosition.current || !scrollContainerRef.current) return
+    const container = scrollContainerRef.current
+    activePosition.current = snapPositionList.current[activePosition.current.index]
+    container.scrollLeft = activePosition.current.left
+    container.scrollTop = activePosition.current.top
+    console.log('size changed', activePosition.current.left)
+  }, [childrenSelector, windowSize])
 
+  useLayoutEffect(() => {
     activePosition.current = snapPositionList.current[0]
-  }, [childrenSelector, windowDimension])
+  }, [])
 
   const getScrollPosition = useCallback(() => {
     const container = scrollContainerRef.current
@@ -470,7 +478,7 @@ export function useScrollSnap({
   useEventListener(
     'resize',
     () =>
-      setWindowDimension({
+      setWindowSize({
         height: window.innerHeight,
         width: window.innerWidth
       }),
@@ -488,7 +496,7 @@ export function useScrollSnap({
     },
     [snapToDestination, snapPositionList]
   )
-  return { snapTo, isInteracting }
+  return { snapTo, isInteracting, windowSize }
 }
 
 export function useScrollIntoView(containerRef, duration = 250, easing = 'ease-out') {

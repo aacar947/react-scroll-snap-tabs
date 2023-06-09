@@ -371,7 +371,7 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
     prevEventIndex.current = links.indexOf(currentEvent)
   }, [currentEvent])
 
-  const { snapTo, isInteracting } = useScrollSnap({
+  const { snapTo, isInteracting, windowSize } = useScrollSnap({
     ...options,
     scrollContainerRef: contentRef,
     onSnapStart,
@@ -430,7 +430,6 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
       const delta = _targetIndex - _prevIndex
       let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
       _progress = Math.min(1, Math.max(_progress, 0))
-      console.log({ _prevIndex, _targetIndex, scrollValue })
       _progress = _progress > 0.995 ? 1 : _progress
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
@@ -470,6 +469,12 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
     snapTo(currIndex, true)
     moveIndicator(1, currIndex, currIndex)
   }, [links, indicatorRef])
+
+  // to fix missposition of the indicator on window resize
+  useLayoutEffect(() => {
+    const index = links.indexOf(currentEvent)
+    moveIndicator(1, index, index)
+  }, [windowSize])
 
   const _children = useMemo(() => {
     return (
