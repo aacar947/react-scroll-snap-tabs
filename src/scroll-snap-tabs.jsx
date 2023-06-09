@@ -283,7 +283,7 @@ Nav.propTypes = {
   activeLinkStyle: PropTypes.object,
   indicatorColor: PropTypes.string,
   indicatorClass: PropTypes.string,
-  indicatorSize: PropTypes.number,
+  indicatorSize: PropTypes.string,
   indicatorStyle: PropTypes.object,
   onIndicatorMove: PropTypes.func,
   linkStyle: PropTypes.object,
