@@ -1,32 +1,5 @@
 import React, { useCallback, useRef, useState, useLayoutEffect, useMemo, useEffect, useContext } from 'react';
 
-function _extends() {
-  _extends = Object.assign ? Object.assign.bind() : function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-    return target;
-  };
-  return _extends.apply(this, arguments);
-}
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-  return target;
-}
-
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -1126,40 +1099,35 @@ if (process.env.NODE_ENV !== 'production') {
 }
 });
 
-var styles = {"tab-content":"_XaRX6","tab-nav":"_3vo4o"};
+var styles = {"tab-content":"_styles-module__tab-content__XaRX6","tab-nav":"_styles-module__tab-nav__3vo4o"};
 
-var defaultOptions = {
+const defaultOptions = {
   duration: 300,
   easing: 'ease-out',
   fireAnimationEndEventOnStop: false
 };
-var Animation = /*#__PURE__*/function () {
-  function Animation(options) {
-    var _options = _extends({}, defaultOptions, options);
+class Animation {
+  constructor(options) {
+    const _options = {
+      ...defaultOptions,
+      ...options
+    };
     switch (_options.easing) {
       case 'ease-in':
-        _options.timing = function (t) {
-          return t * t;
-        };
+        _options.timing = t => t * t;
         break;
       case 'ease-out':
-        _options.timing = function (t) {
-          return 1 - Math.pow(1 - t, 2);
-        };
+        _options.timing = t => 1 - Math.pow(1 - t, 2);
         break;
       case 'ease-in-out':
-        _options.timing = function (t) {
-          return t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2;
-        };
+        _options.timing = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2;
         break;
       default:
         if (typeof _options.easing === 'function') {
           _options.timing = _options.easing;
           break;
         }
-        _options.timing = function (t) {
-          return t;
-        };
+        _options.timing = t => t;
         break;
     }
     this.options = _options;
@@ -1167,11 +1135,10 @@ var Animation = /*#__PURE__*/function () {
     this.started = false;
     this._events = {};
   }
-  var _proto = Animation.prototype;
-  _proto.start = function start() {
-    var timing = this.options.timing;
-    var update = this.options.update;
-    var duration = this.options.duration;
+  start() {
+    const timing = this.options.timing;
+    const update = this.options.update;
+    const duration = this.options.duration;
     if (!window.requestAnimationFrame) {
       update(1);
       if (this._events['end']) {
@@ -1180,7 +1147,7 @@ var Animation = /*#__PURE__*/function () {
       console.warn('Your browser does not support window.requestAnimationFrame');
       return;
     }
-    var startTime = window.performance.now();
+    let startTime = window.performance.now();
     function _animate(time) {
       if (!this.started) {
         if (this._events['start']) this._emit('start');
@@ -1190,7 +1157,7 @@ var Animation = /*#__PURE__*/function () {
         if (this._events['end'] && this.options.fireAnimationEndEventOnStop) this.emit('end', this.progress);
         return;
       }
-      var timeFraction = (time - startTime) / duration;
+      let timeFraction = (time - startTime) / duration;
       if (timeFraction < 0) {
         timeFraction = 0;
         startTime = time;
@@ -1202,11 +1169,11 @@ var Animation = /*#__PURE__*/function () {
           this._emit('end', this.progress);
         }
       }
-      var progress = timing(timeFraction);
+      const progress = timing(timeFraction);
       this.progress = progress;
       if (this.options.fromTo) {
-        var fromTo = this.options.fromTo;
-        var dist = fromTo[1] - fromTo[0];
+        const fromTo = this.options.fromTo;
+        const dist = fromTo[1] - fromTo[0];
         update(fromTo[0] + progress * dist);
       } else {
         update(progress);
@@ -1216,240 +1183,230 @@ var Animation = /*#__PURE__*/function () {
       }
     }
     this.requestId = window.requestAnimationFrame(_animate.bind(this));
-  };
-  _proto.stop = function stop() {
+  }
+  stop() {
     window.cancelAnimationFrame(this.requestId);
     this.stopped = true;
-  };
-  _proto.update = function update(callback) {
+  }
+  update(callback) {
     this.options.update = callback;
     this.stopped = false;
     this.started = false;
     return this;
-  };
-  _proto.on = function on(name, callback) {
+  }
+  on(name, callback) {
     if (!this._events[name]) {
       this._events[name] = [];
     }
     this._events[name].push(callback);
-  };
-  _proto.removeListener = function removeListener(name, callback) {
+  }
+  removeListener(name, callback) {
     if (!this._events[name]) return;
-    var filterListeners = function filterListeners(listener) {
-      return listener !== callback;
-    };
+    const filterListeners = listener => listener !== callback;
     this._events[name] = this._events[name].filter(filterListeners);
-  };
-  _proto.removeAllListeners = function removeAllListeners() {
+  }
+  removeAllListeners() {
     this._events = {};
-  };
-  _proto._emit = function _emit(name, data) {
+  }
+  _emit(name, data) {
     if (!this._events[name]) {
-      console.warn("Can't emit an event. Event \"" + name + "\" doesn't exits.");
+      console.warn(`Can't emit an event. Event "${name}" doesn't exits.`);
       return;
     }
-    this._events[name].forEach(function (callback) {
+    this._events[name].forEach(callback => {
       callback(data);
     });
-  };
-  return Animation;
-}();
-var CONTAINER_INDEX = 0;
-function useScrollSnap(_ref) {
-  var scrollContainerRef = _ref.scrollContainerRef,
-    _ref$childrenSelector = _ref.childrenSelector,
-    childrenSelector = _ref$childrenSelector === void 0 ? '> div' : _ref$childrenSelector,
-    _ref$threshold = _ref.threshold,
-    threshold = _ref$threshold === void 0 ? 30 : _ref$threshold,
-    _ref$swipeThreshold = _ref.swipeThreshold,
-    swipeThreshold = _ref$swipeThreshold === void 0 ? 200 : _ref$swipeThreshold,
-    _ref$easing = _ref.easing,
-    easing = _ref$easing === void 0 ? 'ease-out' : _ref$easing,
-    _ref$duration = _ref.duration,
-    duration = _ref$duration === void 0 ? 250 : _ref$duration,
-    onSnapStart = _ref.onSnapStart,
-    onSnap = _ref.onSnap;
-  var _useState = useState(null),
-    windowDimension = _useState[0],
-    setWindowDimension = _useState[1];
-  var isInteracting = useRef(false);
-  var animation = useRef(null);
-  var snapPositionList = useRef([]);
-  var activePosition = useRef();
-  var index = useRef(null);
-  var swipe = useRef(null);
-  var scrollStart = useRef(null);
-  var timeOut = useRef(null);
-  useLayoutEffect(function () {
+  }
+}
+let CONTAINER_INDEX = 0;
+function useScrollSnap({
+  scrollContainerRef,
+  childrenSelector = '> div',
+  threshold = 30,
+  swipeThreshold = 200,
+  easing = 'ease-out',
+  duration = 250,
+  onSnapStart,
+  onSnap
+}) {
+  const [windowDimension, setWindowDimension] = useState(null);
+  const isInteracting = useRef(false);
+  const animation = useRef(null);
+  const snapPositionList = useRef([]);
+  const activePosition = useRef();
+  const index = useRef(null);
+  const swipe = useRef(null);
+  const scrollStart = useRef(null);
+  const timeOut = useRef(null);
+  useLayoutEffect(() => {
     index.current = CONTAINER_INDEX;
     scrollContainerRef.current.dataset.snapContainerId = index.current;
     scrollContainerRef.current.style.position = 'relative';
     animation.current = new Animation({
-      easing: easing,
-      duration: duration
+      easing,
+      duration
     });
     CONTAINER_INDEX++;
   }, []);
-  useLayoutEffect(function () {
-    var reduceToSnapPositions = function reduceToSnapPositions(positions, child, i) {
-      return [].concat(positions, [{
-        index: i,
-        top: child.offsetTop,
-        left: child.offsetLeft,
-        right: child.offsetLeft + child.offsetWidth,
-        bottom: child.offsetTop + child.offsetHeight
-      }]);
-    };
-    var query = "[data-snap-container-id=\"" + index.current + "\"] " + childrenSelector;
+  useLayoutEffect(() => {
+    const reduceToSnapPositions = (positions, child, i) => [...positions, {
+      index: i,
+      top: child.offsetTop,
+      left: child.offsetLeft,
+      right: child.offsetLeft + child.offsetWidth,
+      bottom: child.offsetTop + child.offsetHeight
+    }];
+    const query = `[data-snap-container-id="${index.current}"] ${childrenSelector}`;
     snapPositionList.current = Array.from(scrollContainerRef.current.querySelectorAll(query)).reduce(reduceToSnapPositions, []);
     activePosition.current = snapPositionList.current[0];
   }, [childrenSelector, windowDimension]);
-  var getScrollPosition = useCallback(function () {
-    var container = scrollContainerRef.current;
+  const getScrollPosition = useCallback(() => {
+    const container = scrollContainerRef.current;
     return {
       top: container.scrollTop,
       left: container.scrollLeft
     };
   }, []);
-  var snapToDestination = useCallback(function (destination, currentPosition) {
+  const snapToDestination = useCallback((destination, currentPosition) => {
     var _animation$current;
     if (!destination) return;
     currentPosition = currentPosition || getScrollPosition();
-    var xDist = destination.left - currentPosition.left;
-    var yDist = destination.top - currentPosition.top;
+    const xDist = destination.left - currentPosition.left;
+    const yDist = destination.top - currentPosition.top;
     if (xDist === 0 && yDist === 0 && destination.left === activePosition.current.left && destination.top === activePosition.current.top) {
       if (onSnapStart) onSnapStart(destination.index);
       activePosition.current = destination;
       return;
     }
-    var draw = function draw(progress) {
-      var left = currentPosition.left + progress * xDist;
-      var top = currentPosition.top + progress * yDist;
+    const draw = progress => {
+      const left = currentPosition.left + progress * xDist;
+      const top = currentPosition.top + progress * yDist;
       scrollContainerRef.current.scrollTo({
-        top: top,
-        left: left
+        top,
+        left
       });
     };
     (_animation$current = animation.current) === null || _animation$current === void 0 ? void 0 : _animation$current.stop();
     animation.current.update(draw);
     animation.current.removeAllListeners();
-    animation.current.on('start', function () {
+    animation.current.on('start', () => {
       if (onSnapStart) onSnapStart(destination.index);
       activePosition.current = destination;
     });
-    animation.current.on('end', function () {
+    animation.current.on('end', () => {
       clearTimeout(timeOut.current);
       if (onSnap) onSnap(destination.index);
     });
     animation.current.start();
   }, [getScrollPosition, onSnapStart, onSnap]);
-  var getPositionsInViewport = useCallback(function (container) {
-    var scroll = getScrollPosition();
-    var boundry = _extends({}, scroll, {
+  const getPositionsInViewport = useCallback(container => {
+    const scroll = getScrollPosition();
+    const boundry = {
+      ...scroll,
       right: scroll.left + container.clientWidth,
       bottom: scroll.top + container.clientHeight
-    });
-    return snapPositionList.current.filter(function (pos) {
+    };
+    return snapPositionList.current.filter(pos => {
       return pos.top < boundry.bottom && pos.bottom > boundry.top && pos.left < boundry.right && pos.right > boundry.left;
     });
   }, [getScrollPosition, snapPositionList]);
-  var getSnapPosition = useCallback(function (deltaLeft, deltaTop) {
-    var positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
-    var index = deltaLeft < 0 || deltaTop < 0 ? positionsInViewport[0].index + 1 : positionsInViewport[positionsInViewport.length - 1].index - 1;
+  const getSnapPosition = useCallback((deltaLeft, deltaTop) => {
+    const positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
+    const index = deltaLeft < 0 || deltaTop < 0 ? positionsInViewport[0].index + 1 : positionsInViewport[positionsInViewport.length - 1].index - 1;
     return snapPositionList.current[index] || positionsInViewport[0];
   }, [getPositionsInViewport]);
-  var getNearestPositionInViewport = useCallback(function () {
-    var positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
-    var scroll = getScrollPosition();
+  const getNearestPositionInViewport = useCallback(() => {
+    const positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
+    const scroll = getScrollPosition();
     if (positionsInViewport.length === 1) return positionsInViewport[0];
-    return positionsInViewport.sort(function (a, b) {
-      var leftCenter = (a.left + b.left) / 2;
-      var topCenter = (a.top + b.top) / 2;
-      var reverseFactor = a.left > b.left || a.top > b.top ? 1 : -1;
+    return positionsInViewport.sort((a, b) => {
+      const leftCenter = (a.left + b.left) / 2;
+      const topCenter = (a.top + b.top) / 2;
+      const reverseFactor = a.left > b.left || a.top > b.top ? 1 : -1;
       return (leftCenter - scroll.left) * reverseFactor || (topCenter - scroll.top) * reverseFactor;
     })[0];
   }, [getPositionsInViewport, getScrollPosition]);
-  var isSwipeTresholdExceeded = useCallback(function (deltaLeft, deltaTop) {
+  const isSwipeTresholdExceeded = useCallback((deltaLeft, deltaTop) => {
     if (Math.abs(deltaLeft) <= 5 && Math.abs(deltaTop) <= 5) return false;
-    var calcWithInertia = function calcWithInertia() {
-      var DEC = 625 * Math.pow(10, -6);
-      var speed = swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed;
+    const calcWithInertia = () => {
+      const DEC = 625 * Math.pow(10, -6);
+      const speed = swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed;
       return speed * speed / (2 * DEC) > swipeThreshold;
     };
     return Math.abs(deltaTop) > swipeThreshold || Math.abs(deltaLeft) > swipeThreshold || calcWithInertia();
   }, [swipeThreshold]);
-  var findAPositionAndSnap = useCallback(function () {
+  const findAPositionAndSnap = useCallback(() => {
     var _scrollStart$current, _scrollStart$current2;
     if (!animation.current.stopped) return;
-    var scroll = getScrollPosition();
-    var deltaLeft = (((_scrollStart$current = scrollStart.current) === null || _scrollStart$current === void 0 ? void 0 : _scrollStart$current.left) || activePosition.current.left) - scroll.left;
-    var deltaTop = (((_scrollStart$current2 = scrollStart.current) === null || _scrollStart$current2 === void 0 ? void 0 : _scrollStart$current2.top) || activePosition.current.top) - scroll.top;
-    var destination;
-    var tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(deltaLeft, deltaTop) : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold;
+    const scroll = getScrollPosition();
+    const deltaLeft = (((_scrollStart$current = scrollStart.current) === null || _scrollStart$current === void 0 ? void 0 : _scrollStart$current.left) || activePosition.current.left) - scroll.left;
+    const deltaTop = (((_scrollStart$current2 = scrollStart.current) === null || _scrollStart$current2 === void 0 ? void 0 : _scrollStart$current2.top) || activePosition.current.top) - scroll.top;
+    let destination;
+    const tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(deltaLeft, deltaTop) : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold;
     if (tresholdExceeded) {
-      var snapPosition = getSnapPosition(deltaLeft, deltaTop);
+      const snapPosition = getSnapPosition(deltaLeft, deltaTop);
       destination = snapPosition;
     } else {
       destination = getNearestPositionInViewport();
     }
     snapToDestination(destination, scroll);
   }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, snapToDestination]);
-  var enableScroll = useCallback(function () {
-    var container = scrollContainerRef.current;
+  const enableScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
     container.style.overflow = 'auto';
   }, []);
-  var onScrollEnd = useCallback(function (time) {
-    return function (e) {
+  const onScrollEnd = useCallback(time => {
+    return e => {
       clearTimeout(timeOut.current);
       if (isInteracting.current || !animation.current.stopped) {
         return;
       }
-      timeOut.current = setTimeout(function () {
+      timeOut.current = setTimeout(() => {
         enableScroll();
         findAPositionAndSnap();
       }, time);
     };
   }, [enableScroll, findAPositionAndSnap]);
-  var onInput = useCallback(function (e) {
+  const onInput = useCallback(e => {
     enableScroll();
     onScrollEnd(66)();
   }, [enableScroll, onScrollEnd]);
-  var onInputStart = useCallback(function () {
+  const onInputStart = useCallback(() => {
     var _animation$current2;
     scrollStart.current = getScrollPosition();
     (_animation$current2 = animation.current) === null || _animation$current2 === void 0 ? void 0 : _animation$current2.stop();
     enableScroll();
     isInteracting.current = true;
   }, [enableScroll]);
-  var onInputEnd = useCallback(function () {
+  const onInputEnd = useCallback(() => {
     isInteracting.current = false;
     findAPositionAndSnap();
     scrollStart.current = null;
   }, [findAPositionAndSnap]);
-  var onTouchStart = useCallback(function (e) {
-    var touch = e.changedTouches[0];
+  const onTouchStart = useCallback(e => {
+    const touch = e.changedTouches[0];
     swipe.current = {};
     swipe.current.xStart = touch.clientX;
     swipe.current.yStart = touch.clientY;
     swipe.current.startTime = window.performance ? window.performance.now() : Date.now();
     onInputStart();
   }, [onInputStart]);
-  var onTouchEnd = useCallback(function (e) {
+  const onTouchEnd = useCallback(e => {
     if (!swipe.current) return;
-    var touch = e.changedTouches[0];
-    var endTime = window.performance ? window.performance.now() : Date.now();
-    var travelTime = endTime - swipe.current.startTime;
+    const touch = e.changedTouches[0];
+    const endTime = window.performance ? window.performance.now() : Date.now();
+    const travelTime = endTime - swipe.current.startTime;
     swipe.current.xSpeed = Math.abs(swipe.current.xStart - touch.clientX) / travelTime;
     swipe.current.ySpeed = Math.abs(swipe.current.yStart - touch.clientY) / travelTime;
-    var container = scrollContainerRef.current;
+    const container = scrollContainerRef.current;
     container.style.overflow = 'hidden';
     onInputEnd();
     swipe.current = null;
   }, [onInputEnd]);
-  var passiveSupported = useMemo(function () {
-    var supported = false;
+  const passiveSupported = useMemo(() => {
+    let supported = false;
     try {
-      var options = {
+      const options = {
         get passive() {
           supported = true;
           return false;
@@ -1486,62 +1443,53 @@ function useScrollSnap(_ref) {
   useEventListener('wheel', onInput, scrollContainerRef.current, passiveSupported && {
     passive: true
   });
-  useEventListener('resize', function () {
-    return setWindowDimension({
-      height: window.innerHeight,
-      width: window.innerWidth
-    });
-  }, window);
-  var snapTo = useCallback(function (index, disableAnimation) {
-    if (disableAnimation === void 0) {
-      disableAnimation = false;
-    }
+  useEventListener('resize', () => setWindowDimension({
+    height: window.innerHeight,
+    width: window.innerWidth
+  }), window);
+  const snapTo = useCallback((index, disableAnimation = false) => {
     if (disableAnimation) {
-      var _ref2 = snapPositionList.current[index] || snapPositionList.current[0],
-        top = _ref2.top,
-        left = _ref2.left;
+      const {
+        top,
+        left
+      } = snapPositionList.current[index] || snapPositionList.current[0];
       scrollContainerRef.current.scrollTo({
-        top: top,
-        left: left
+        top,
+        left
       });
       return;
     }
     snapToDestination(snapPositionList.current[index]);
   }, [snapToDestination, snapPositionList]);
   return {
-    snapTo: snapTo,
-    isInteracting: isInteracting
+    snapTo,
+    isInteracting
   };
 }
-function useScrollIntoView(containerRef, duration, easing) {
-  if (duration === void 0) {
-    duration = 250;
-  }
-  if (easing === void 0) {
-    easing = 'ease-out';
-  }
-  var animation = useRef(new Animation({
-    duration: duration,
-    easing: easing
+function useScrollIntoView(containerRef, duration = 250, easing = 'ease-out') {
+  const animation = useRef(new Animation({
+    duration,
+    easing
   }));
-  var getScrollPosition = useCallback(function () {
-    var container = containerRef.current;
+  const getScrollPosition = useCallback(() => {
+    const container = containerRef.current;
     return {
       top: container.scrollTop,
       left: container.scrollLeft
     };
   }, [containerRef]);
-  var getBoundryBox = useCallback(function () {
-    var container = containerRef.current;
-    var scroll = getScrollPosition();
-    return _extends({}, scroll, {
+  const getBoundryBox = useCallback(() => {
+    const container = containerRef.current;
+    const scroll = getScrollPosition();
+    return {
+      ...scroll,
       bottom: scroll.top + container.clientHeight,
       right: scroll.left + container.clientWidth,
       scrollWidth: container.scrollWidth - container.clientWidth,
       scrollHeight: container.scrollHeight - container.clientHeight
-    });
+    };
   }, [getScrollPosition, containerRef]);
-  var getRelativeBoundryBox = useCallback(function (element) {
+  const getRelativeBoundryBox = useCallback(element => {
     return {
       left: element.offsetLeft,
       top: element.offsetTop,
@@ -1549,12 +1497,12 @@ function useScrollIntoView(containerRef, duration, easing) {
       bottom: element.offsetTop + element.offsetHeight
     };
   }, []);
-  var containsChild = useCallback(function (child) {
-    var container = containerRef.current;
+  const containsChild = useCallback(child => {
+    const container = containerRef.current;
     if (window.document.contains) {
       return container.contains(child);
     }
-    var node = child.parentNode;
+    let node = child.parentNode;
     while (node != null) {
       if (node === container) {
         return true;
@@ -1563,12 +1511,12 @@ function useScrollIntoView(containerRef, duration, easing) {
     }
     return false;
   }, [containerRef]);
-  var scrollToDestination = useCallback(function (destination) {
-    var container = containerRef.current;
-    var scroll = getScrollPosition();
-    var distX = destination.left - scroll.left;
-    var distY = destination.top - scroll.top;
-    var draw = function draw(progress) {
+  const scrollToDestination = useCallback(destination => {
+    const container = containerRef.current;
+    const scroll = getScrollPosition();
+    const distX = destination.left - scroll.left;
+    const distY = destination.top - scroll.top;
+    const draw = progress => {
       container.scrollLeft = scroll.left + distX * progress;
       container.scrollTop = scroll.top + distY * progress;
     };
@@ -1576,49 +1524,40 @@ function useScrollIntoView(containerRef, duration, easing) {
     animation.current.update(draw);
     animation.current.start();
   }, [getScrollPosition, containerRef]);
-  return useCallback(function (element, offset) {
+  return useCallback((element, offset) => {
     if (!containsChild(element)) return;
-    var OFFSET = {};
+    const OFFSET = {};
     OFFSET.x = typeof offset === 'object' ? Number(offset.x) || 0 : Number(offset) || 0;
     OFFSET.y = typeof offset === 'object' ? Number(offset.y) || 0 : Number(offset) || 0;
-    var boundry = getBoundryBox();
-    var childRect = getRelativeBoundryBox(element);
-    var deltaX = childRect.left - OFFSET.x > boundry.left && childRect.right + OFFSET.x > boundry.right ? childRect.right - boundry.right + OFFSET.x : childRect.left - OFFSET.x < boundry.left && childRect.right + OFFSET.x < boundry.right ? childRect.left - boundry.left - OFFSET.x : 0;
-    var deltaY = childRect.top > boundry.top && childRect.bottom > boundry.bottom ? childRect.bottom - boundry.bottom + OFFSET.y : childRect.top < boundry.top && childRect.bottom < boundry.bottom ? childRect.top - boundry.top - OFFSET.y : 0;
-    var top = Math.max(0, Math.min(boundry.top + deltaY, boundry.scrollHeight));
-    var left = Math.max(0, Math.min(boundry.left + deltaX, boundry.scrollWidth));
-    var destination = {
-      top: top,
-      left: left
+    const boundry = getBoundryBox();
+    const childRect = getRelativeBoundryBox(element);
+    const deltaX = childRect.left - OFFSET.x > boundry.left && childRect.right + OFFSET.x > boundry.right ? childRect.right - boundry.right + OFFSET.x : childRect.left - OFFSET.x < boundry.left && childRect.right + OFFSET.x < boundry.right ? childRect.left - boundry.left - OFFSET.x : 0;
+    const deltaY = childRect.top > boundry.top && childRect.bottom > boundry.bottom ? childRect.bottom - boundry.bottom + OFFSET.y : childRect.top < boundry.top && childRect.bottom < boundry.bottom ? childRect.top - boundry.top - OFFSET.y : 0;
+    const top = Math.max(0, Math.min(boundry.top + deltaY, boundry.scrollHeight));
+    const left = Math.max(0, Math.min(boundry.left + deltaX, boundry.scrollWidth));
+    const destination = {
+      top,
+      left
     };
     scrollToDestination(destination);
   }, [containsChild, getBoundryBox, getRelativeBoundryBox, scrollToDestination]);
 }
 function useEventListener(eventName, handler, element, options) {
-  var _handler = useRef();
-  useEffect(function () {
+  const _handler = useRef();
+  useEffect(() => {
     _handler.current = handler;
   }, [handler]);
-  useEffect(function () {
-    var isHTMLElement = element && element.addEventListener;
+  useEffect(() => {
+    const isHTMLElement = element && element.addEventListener;
     if (!isHTMLElement) return;
-    var eventHandler = function eventHandler(e) {
-      return _handler.current(e);
-    };
+    const eventHandler = e => _handler.current(e);
     element.addEventListener(eventName, eventHandler, options);
-    return function () {
-      return element.removeEventListener(eventName, eventHandler, options);
-    };
+    return () => element.removeEventListener(eventName, eventHandler, options);
   }, [eventName, element]);
 }
 
-var _excluded = ["children", "defaultKey", "eventKeys", "style", "className", "layout", "snapDuration", "snapThreshold", "swipeThreshold", "easing", "indicatorClass", "indicatorColor", "indicatorStyle", "indicatorSize", "onIndicatorMove", "activeLinkClass", "activeLinkStyle", "indicatorParentStyle", "indicatorParentClass", "scrollIntoViewDuration", "scrollIntoViewEasing", "scrollIntoViewOffset", "linkStyle", "linkClass"],
-  _excluded2 = ["eventKeys", "className", "activeLinkClass", "activeLinkStyle", "indicatorColor", "indicatorClass", "indicatorSize", "indicatorStyle", "onIndicatorMove", "indicatorParentStyle", "indicatorParentClass", "scrollIntoViewDuration", "scrollIntoViewEasing", "scrollIntoViewOffset", "children", "style", "linkStyle", "linkClass", "__TYPE"],
-  _excluded3 = ["eventKey", "className", "children", "style", "activeStyle", "activeClass", "__TYPE"],
-  _excluded4 = ["children", "style", "paneStyle", "paneClass", "className"],
-  _excluded5 = ["children", "eventKey", "__TYPE"];
-var TabProvider = React.createContext();
-var LAYOUT_PROP_NAMES = {
+const TabProvider = React.createContext();
+const LAYOUT_PROP_NAMES = {
   vertical: {
     left: 'left',
     width: 'width',
@@ -1634,7 +1573,7 @@ var LAYOUT_PROP_NAMES = {
     minHeight: 'minWidth'
   }
 };
-var LAYOUT_PROP_VALUES = {
+const LAYOUT_PROP_VALUES = {
   vertical: {
     wrapperflexDirection: 'column',
     flexDirection: 'row',
@@ -1646,46 +1585,43 @@ var LAYOUT_PROP_VALUES = {
     indicatorRight: '0'
   }
 };
-function ScrollSnapTabs(_ref) {
-  var children = _ref.children,
-    defaultKey = _ref.defaultKey,
-    eventKeys = _ref.eventKeys,
-    style = _ref.style,
-    className = _ref.className,
-    layout = _ref.layout,
-    snapDuration = _ref.snapDuration,
-    snapThreshold = _ref.snapThreshold,
-    swipeThreshold = _ref.swipeThreshold,
-    easing = _ref.easing,
-    indicatorClass = _ref.indicatorClass,
-    indicatorColor = _ref.indicatorColor,
-    indicatorStyle = _ref.indicatorStyle,
-    indicatorSize = _ref.indicatorSize,
-    onIndicatorMove = _ref.onIndicatorMove,
-    activeLinkClass = _ref.activeLinkClass,
-    activeLinkStyle = _ref.activeLinkStyle,
-    indicatorParentStyle = _ref.indicatorParentStyle,
-    indicatorParentClass = _ref.indicatorParentClass,
-    scrollIntoViewDuration = _ref.scrollIntoViewDuration,
-    scrollIntoViewEasing = _ref.scrollIntoViewEasing,
-    scrollIntoViewOffset = _ref.scrollIntoViewOffset,
-    linkStyle = _ref.linkStyle,
-    linkClass = _ref.linkClass,
-    rest = _objectWithoutPropertiesLoose(_ref, _excluded);
-  var propValues = layout === 'horizontal' ? LAYOUT_PROP_VALUES.horizontal : LAYOUT_PROP_VALUES.vertical;
-  var propNames = layout === 'horizontal' ? LAYOUT_PROP_NAMES.horizontal : LAYOUT_PROP_NAMES.vertical;
-  var _useState = useState(null),
-    currentEvent = _useState[0],
-    setCurrentEvent = _useState[1];
-  var _useState2 = useState([]),
-    events = _useState2[0],
-    setEvents = _useState2[1];
-  var indicatorRef = useRef(null);
-  var onIndicatorMoveRef = useRef(onIndicatorMove);
-  var contentRef = useRef(null);
-  var snapTo = useRef(null);
-  var linkMapRef = useRef(new Map());
-  useEffect(function () {
+function ScrollSnapTabs({
+  children,
+  defaultKey,
+  eventKeys,
+  style,
+  className,
+  layout,
+  snapDuration,
+  snapThreshold,
+  swipeThreshold,
+  easing,
+  indicatorClass,
+  indicatorColor,
+  indicatorStyle,
+  indicatorSize,
+  onIndicatorMove,
+  activeLinkClass,
+  activeLinkStyle,
+  indicatorParentStyle,
+  indicatorParentClass,
+  scrollIntoViewDuration,
+  scrollIntoViewEasing,
+  scrollIntoViewOffset,
+  linkStyle,
+  linkClass,
+  ...rest
+}) {
+  const propValues = layout === 'horizontal' ? LAYOUT_PROP_VALUES.horizontal : LAYOUT_PROP_VALUES.vertical;
+  const propNames = layout === 'horizontal' ? LAYOUT_PROP_NAMES.horizontal : LAYOUT_PROP_NAMES.vertical;
+  const [currentEvent, setCurrentEvent] = useState(null);
+  const [events, setEvents] = useState([]);
+  const indicatorRef = useRef(null);
+  const onIndicatorMoveRef = useRef(onIndicatorMove);
+  const contentRef = useRef(null);
+  const snapTo = useRef(null);
+  const linkMapRef = useRef(new Map());
+  useEffect(() => {
     if (!currentEvent && events.length > 0) {
       setCurrentEvent(defaultKey || events[0]);
     }
@@ -1694,44 +1630,45 @@ function ScrollSnapTabs(_ref) {
     value: {
       eventHandler: [currentEvent, setCurrentEvent],
       events: [events, setEvents],
-      indicatorRef: indicatorRef,
-      contentRef: contentRef,
-      linkMapRef: linkMapRef,
-      onIndicatorMoveRef: onIndicatorMoveRef,
-      snapTo: snapTo,
-      propValues: propValues,
-      propNames: propNames,
+      indicatorRef,
+      contentRef,
+      linkMapRef,
+      onIndicatorMoveRef,
+      snapTo,
+      propValues,
+      propNames,
       defaultKey: defaultKey || events[0],
       navOptions: {
-        indicatorClass: indicatorClass,
-        indicatorStyle: indicatorStyle,
-        indicatorColor: indicatorColor,
-        activeLinkClass: activeLinkClass,
-        activeLinkStyle: activeLinkStyle,
-        indicatorParentStyle: indicatorParentStyle,
-        indicatorParentClass: indicatorParentClass,
-        indicatorSize: indicatorSize,
-        scrollIntoViewDuration: scrollIntoViewDuration,
-        scrollIntoViewEasing: scrollIntoViewEasing,
-        scrollIntoViewOffset: scrollIntoViewOffset,
-        linkStyle: linkStyle,
-        linkClass: linkClass
+        indicatorClass,
+        indicatorStyle,
+        indicatorColor,
+        activeLinkClass,
+        activeLinkStyle,
+        indicatorParentStyle,
+        indicatorParentClass,
+        indicatorSize,
+        scrollIntoViewDuration,
+        scrollIntoViewEasing,
+        scrollIntoViewOffset,
+        linkStyle,
+        linkClass
       },
       options: {
         duration: snapDuration,
-        easing: easing,
+        easing,
         threshold: snapThreshold,
-        swipeThreshold: swipeThreshold
+        swipeThreshold
       }
     }
-  }, /*#__PURE__*/React.createElement("div", _extends({
+  }, /*#__PURE__*/React.createElement("div", Object.assign({
     className: [styles.tabs, className].join(' ').trim(),
-    style: _extends({
+    style: {
       display: 'flex',
       flexDirection: propValues.wrapperflexDirection,
       height: '100%',
-      width: '100%'
-    }, style)
+      width: '100%',
+      ...style
+    }
   }, rest), eventKeys && /*#__PURE__*/React.createElement(Nav, {
     eventKeys: eventKeys
   }), children));
@@ -1754,96 +1691,120 @@ ScrollSnapTabs.propTypes = {
   scrollIntoViewEasing: propTypes.oneOfType([propTypes.string, propTypes.func]),
   scrollIntoViewOffset: propTypes.number
 };
-function Nav(_ref2) {
-  var _extends2;
-  var eventKeys = _ref2.eventKeys,
-    className = _ref2.className,
-    activeLinkClass = _ref2.activeLinkClass,
-    activeLinkStyle = _ref2.activeLinkStyle,
-    indicatorColor = _ref2.indicatorColor,
-    indicatorClass = _ref2.indicatorClass,
-    indicatorSize = _ref2.indicatorSize,
-    indicatorStyle = _ref2.indicatorStyle,
-    onIndicatorMove = _ref2.onIndicatorMove,
-    indicatorParentStyle = _ref2.indicatorParentStyle,
-    indicatorParentClass = _ref2.indicatorParentClass,
-    scrollIntoViewDuration = _ref2.scrollIntoViewDuration,
-    scrollIntoViewEasing = _ref2.scrollIntoViewEasing,
-    scrollIntoViewOffset = _ref2.scrollIntoViewOffset,
-    children = _ref2.children,
-    style = _ref2.style,
-    linkStyle = _ref2.linkStyle,
-    linkClass = _ref2.linkClass,
-    rest = _objectWithoutPropertiesLoose(_ref2, _excluded2);
-  var _useContext = useContext(TabProvider),
-    indicatorRef = _useContext.indicatorRef,
-    propValues = _useContext.propValues,
-    propNames = _useContext.propNames,
-    navOptions = _useContext.navOptions,
-    linkMapRef = _useContext.linkMapRef,
-    eventHandler = _useContext.eventHandler,
-    onIndicatorMoveRef = _useContext.onIndicatorMoveRef,
-    layout = _useContext.layout;
-  var navContainerRef = useRef();
-  var currentEvent = eventHandler[0];
-  var scrollIntoRelativeView = useScrollIntoView(navContainerRef, scrollIntoViewDuration || navOptions.scrollIntoViewDuration, scrollIntoViewEasing || navOptions.scrollIntoViewEasing);
-  var createNavLinks = function createNavLinks(event, i) {
+function Nav({
+  eventKeys,
+  className,
+  activeLinkClass,
+  activeLinkStyle,
+  indicatorColor,
+  indicatorClass,
+  indicatorSize,
+  indicatorStyle,
+  onIndicatorMove,
+  indicatorParentStyle,
+  indicatorParentClass,
+  scrollIntoViewDuration,
+  scrollIntoViewEasing,
+  scrollIntoViewOffset,
+  children,
+  style,
+  linkStyle,
+  linkClass,
+  __TYPE,
+  ...rest
+}) {
+  const {
+    indicatorRef,
+    propValues,
+    propNames,
+    navOptions,
+    linkMapRef,
+    eventHandler,
+    onIndicatorMoveRef,
+    layout
+  } = useContext(TabProvider);
+  const navContainerRef = useRef();
+  const [currentEvent] = eventHandler;
+  const scrollIntoRelativeView = useScrollIntoView(navContainerRef, scrollIntoViewDuration || navOptions.scrollIntoViewDuration, scrollIntoViewEasing || navOptions.scrollIntoViewEasing);
+  const createNavLinks = (event, i) => {
     return /*#__PURE__*/React.createElement(Link, {
       key: i,
       eventKey: event,
-      style: _extends({}, navOptions.linkStyle, linkStyle),
+      style: {
+        ...navOptions.linkStyle,
+        ...linkStyle
+      },
       className: linkClass || navOptions.linkClass,
-      activeStyle: _extends({
-        color: '#5A90E4'
-      }, navOptions.activeLinkStyle, activeLinkStyle),
+      activeStyle: {
+        color: '#5A90E4',
+        ...navOptions.activeLinkStyle,
+        ...activeLinkStyle
+      },
       activeClass: activeLinkClass || navOptions.activeLinkClass
     });
   };
-  useLayoutEffect(function () {
+  useLayoutEffect(() => {
     if (typeof onIndicatorMove === 'function') onIndicatorMoveRef.current = onIndicatorMove;
   }, []);
-  useEffect(function () {
+  useEffect(() => {
     scrollIntoRelativeView(linkMapRef.current.get(currentEvent), scrollIntoViewOffset || navOptions.scrollIntoViewOffset || 100);
   }, [currentEvent, scrollIntoRelativeView, scrollIntoViewOffset]);
-  var _children = useMemo(function () {
-    return children && React.Children.map(children, function (child) {
+  const _children = useMemo(() => {
+    return children && React.Children.map(children, child => {
       if (React.isValidElement(child) && child.props.__TYPE === 'Link') {
         return React.cloneElement(child, {
-          style: _extends({}, linkStyle, navOptions.linkStyle, child.props.style),
+          style: {
+            ...linkStyle,
+            ...navOptions.linkStyle,
+            ...child.props.style
+          },
           className: [child.props.className, linkClass, navOptions.linkClass].join(' ').trim(),
           activeClass: child.props.activeClass || activeLinkClass || navOptions.activeLinkClass,
-          activeStyle: _extends({}, navOptions.activeLinkStyle, activeLinkStyle, child.props.activeStyle)
+          activeStyle: {
+            ...navOptions.activeLinkStyle,
+            ...activeLinkStyle,
+            ...child.props.activeStyle
+          }
         });
       }
       return child;
     });
   }, [children, activeLinkClass]);
-  var defaultStyle = {
+  const defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
     position: 'relative',
     overflow: 'auto',
     scrollbarWidth: 'none'
   };
-  return /*#__PURE__*/React.createElement("div", _extends({
+  return /*#__PURE__*/React.createElement("div", Object.assign({
     ref: navContainerRef,
-    style: _extends({}, style, defaultStyle),
+    style: {
+      ...style,
+      ...defaultStyle
+    },
     className: [styles['tab-nav'], className].join(' ').trim()
   }, rest), _children || eventKeys && eventKeys.map(createNavLinks), /*#__PURE__*/React.createElement("div", {
-    style: _extends({
+    style: {
       position: 'absolute',
       bottom: propValues.indicatorBottom,
-      right: propValues.indicatorRight
-    }, navOptions.indicatorParentStyle, indicatorParentStyle),
+      right: propValues.indicatorRight,
+      ...navOptions.indicatorParentStyle,
+      ...indicatorParentStyle
+    },
     className: indicatorParentClass || navOptions.indicatorParentClass,
     ref: indicatorRef
   }, /*#__PURE__*/React.createElement("div", {
     className: indicatorClass || navOptions.indicatorClass || '',
-    style: _extends((_extends2 = {
+    style: {
       width: layout === 'horizontal' ? '100%' : indicatorSize || navOptions.indicatorSize,
       height: layout === 'horizontal' ? indicatorSize || navOptions.indicatorSize : '100%',
-      margin: 'auto '
-    }, _extends2[propNames.minHeight] = '3px', _extends2.backgroundColor = indicatorColor || navOptions.indicatorColor || 'black', _extends2), navOptions.indicatorStyle, indicatorStyle)
+      margin: 'auto ',
+      [propNames.minHeight]: '3px',
+      backgroundColor: indicatorColor || navOptions.indicatorColor || 'black',
+      ...navOptions.indicatorStyle,
+      ...indicatorStyle
+    }
   })));
 }
 Nav.propTypes = {
@@ -1865,40 +1826,44 @@ Nav.propTypes = {
 Nav.defaultProps = {
   __TYPE: 'Nav'
 };
-function Link(_ref3) {
-  var eventKey = _ref3.eventKey,
-    className = _ref3.className,
-    children = _ref3.children,
-    style = _ref3.style,
-    activeStyle = _ref3.activeStyle,
-    activeClass = _ref3.activeClass,
-    rest = _objectWithoutPropertiesLoose(_ref3, _excluded3);
-  var _useContext2 = useContext(TabProvider),
-    eventHandler = _useContext2.eventHandler,
-    events = _useContext2.events,
-    linkMapRef = _useContext2.linkMapRef;
-  var selectedTab = eventHandler[0],
-    setSelectedTab = eventHandler[1];
-  var setLinks = events[1];
-  var linkRef = useRef(null);
-  var handleClick = function handleClick(e) {
+function Link({
+  eventKey,
+  className,
+  children,
+  style,
+  activeStyle,
+  activeClass,
+  __TYPE,
+  ...rest
+}) {
+  const {
+    eventHandler,
+    events,
+    linkMapRef
+  } = useContext(TabProvider);
+  const [selectedTab, setSelectedTab] = eventHandler;
+  const [, setLinks] = events;
+  const linkRef = useRef(null);
+  const handleClick = e => {
     setSelectedTab(eventKey);
   };
-  useLayoutEffect(function () {
-    setLinks(function (prev) {
-      return [].concat(prev, [eventKey]);
-    });
+  useLayoutEffect(() => {
+    setLinks(prev => [...prev, eventKey]);
     linkMapRef.current.set(eventKey, linkRef.current);
   }, [eventKey, setLinks]);
-  var _className = selectedTab === eventKey ? [className, activeClass].join(' ').trim() : className;
-  var defaultStyle = _extends({
+  const _className = selectedTab === eventKey ? [className, activeClass].join(' ').trim() : className;
+  const defaultStyle = {
     cursor: 'pointer',
-    padding: '0.5rem'
-  }, style);
-  return /*#__PURE__*/React.createElement("div", _extends({
+    padding: '0.5rem',
+    ...style
+  };
+  return /*#__PURE__*/React.createElement("div", Object.assign({
     onClick: handleClick,
     className: _className,
-    style: selectedTab === eventKey ? _extends({}, defaultStyle, activeStyle) : defaultStyle,
+    style: selectedTab === eventKey ? {
+      ...defaultStyle,
+      ...activeStyle
+    } : defaultStyle,
     ref: linkRef
   }, rest), children || eventKey);
 }
@@ -1911,83 +1876,86 @@ Link.propTypes = {
 Link.defaultProps = {
   __TYPE: 'Link'
 };
-function Content(_ref4) {
-  var children = _ref4.children,
-    style = _ref4.style,
-    paneStyle = _ref4.paneStyle,
-    paneClass = _ref4.paneClass,
-    className = _ref4.className,
-    rest = _objectWithoutPropertiesLoose(_ref4, _excluded4);
-  var _useContext3 = useContext(TabProvider),
-    eventHandler = _useContext3.eventHandler,
-    indicatorRef = _useContext3.indicatorRef,
-    options = _useContext3.options,
-    events = _useContext3.events,
-    linkMapRef = _useContext3.linkMapRef,
-    contentRef = _useContext3.contentRef,
-    _snapTo = _useContext3.snapTo,
-    propValues = _useContext3.propValues,
-    propNames = _useContext3.propNames,
-    defaultKey = _useContext3.defaultKey,
-    onIndicatorMoveRef = _useContext3.onIndicatorMoveRef;
-  var links = events[0];
-  var currentEvent = eventHandler[0],
-    setCurrentEvent = eventHandler[1];
-  var prevScroll = useRef(null);
-  var prevEventIndex = useRef(events.indexOf(currentEvent));
-  var onSnapStart = useCallback(function (index) {
+function Content({
+  children,
+  style,
+  paneStyle,
+  paneClass,
+  className,
+  ...rest
+}) {
+  const {
+    eventHandler,
+    indicatorRef,
+    options,
+    events,
+    linkMapRef,
+    contentRef,
+    snapTo: _snapTo,
+    propValues,
+    propNames,
+    defaultKey,
+    onIndicatorMoveRef
+  } = useContext(TabProvider);
+  const [links] = events;
+  const [currentEvent, setCurrentEvent] = eventHandler;
+  const prevScroll = useRef(null);
+  const prevEventIndex = useRef(events.indexOf(currentEvent));
+  const onSnapStart = useCallback(index => {
     if (currentEvent === links[index]) return;
     setCurrentEvent(links[index]);
   }, [links, setCurrentEvent]);
-  var onSnap = useCallback(function () {
+  const onSnap = useCallback(() => {
     prevEventIndex.current = links.indexOf(currentEvent);
   }, [currentEvent]);
-  var _useScrollSnap = useScrollSnap(_extends({}, options, {
-      scrollContainerRef: contentRef,
-      onSnapStart: onSnapStart,
-      onSnap: onSnap
-    })),
-    snapTo = _useScrollSnap.snapTo,
-    isInteracting = _useScrollSnap.isInteracting;
-  useLayoutEffect(function () {
+  const {
+    snapTo,
+    isInteracting
+  } = useScrollSnap({
+    ...options,
+    scrollContainerRef: contentRef,
+    onSnapStart,
+    onSnap
+  });
+  useLayoutEffect(() => {
     _snapTo.current = snapTo;
   }, [snapTo]);
-  useEffect(function () {
+  useEffect(() => {
     if (prevEventIndex.current >= 0) return;
     prevEventIndex.current = links.indexOf(currentEvent);
   }, [currentEvent]);
-  var mapNumber = function mapNumber(number, numberMin, numberMax, mapFrom, mapTo) {
+  const mapNumber = (number, numberMin, numberMax, mapFrom, mapTo) => {
     number = Math.min(numberMax, Math.max(number, numberMin));
     return mapFrom + (number - numberMin) / (numberMax - numberMin) * (mapTo - mapFrom);
   };
-  var moveIndicator = function moveIndicator(progress, prevIndex, direction, scrollValue) {
-    var current = linkMapRef.current.get(links[prevIndex]);
-    var currentLeft = current && current[propNames.offsetLeft] || 0;
-    var currentWidth = current && current[propNames.offsetWidth] || 0;
-    var target = linkMapRef.current.get(links[direction]);
-    var targetLeft = target && target[propNames.offsetLeft];
-    var targetWidth = target && target[propNames.offsetWidth];
-    var indicator = indicatorRef.current;
+  const moveIndicator = (progress, prevIndex, direction, scrollValue) => {
+    const current = linkMapRef.current.get(links[prevIndex]);
+    const currentLeft = current && current[propNames.offsetLeft] || 0;
+    const currentWidth = current && current[propNames.offsetWidth] || 0;
+    const target = linkMapRef.current.get(links[direction]);
+    const targetLeft = target && target[propNames.offsetLeft];
+    const targetWidth = target && target[propNames.offsetWidth];
+    const indicator = indicatorRef.current;
     if (!indicator) return;
     indicator.style[propNames.left] = mapNumber(progress, 0, 1, currentLeft, targetLeft) + 'px';
     indicator.style[propNames.width] = mapNumber(progress, 0, 1, currentWidth, targetWidth) + 'px';
     if (typeof onIndicatorMoveRef.current === 'function') {
-      var activeIndex = links.indexOf(currentEvent);
+      const activeIndex = links.indexOf(currentEvent);
       if (isInteracting.current) {
         prevEventIndex.current = activeIndex;
       }
-      var movementDir = direction - prevIndex;
+      const movementDir = direction - prevIndex;
       if (movementDir < 0 && prevEventIndex.current < activeIndex || movementDir > 0 && prevEventIndex.current > activeIndex) {
         prevEventIndex.current = prevIndex;
       }
-      var _targetIndex = isInteracting.current ? direction : activeIndex;
-      var _prevIndex = isInteracting.current ? prevIndex : prevEventIndex.current;
+      let _targetIndex = isInteracting.current ? direction : activeIndex;
+      let _prevIndex = isInteracting.current ? prevIndex : prevEventIndex.current;
       if (_prevIndex === activeIndex) {
         _prevIndex = direction === activeIndex ? prevIndex : direction;
         _targetIndex = direction === activeIndex ? direction : prevIndex;
       }
-      var delta = _targetIndex - _prevIndex;
-      var _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
+      const delta = _targetIndex - _prevIndex;
+      let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
       _progress = Math.min(1, Math.max(_progress, 0));
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
@@ -1996,9 +1964,9 @@ function Content(_ref4) {
       });
     }
   };
-  var handleScroll = function handleScroll(e) {
-    var prevIndex, direction;
-    var scrollValue = Number(e.target.scrollLeft / e.target.clientWidth) || Number(e.target.scrollTop / e.target.clientHeight);
+  const handleScroll = e => {
+    let prevIndex, direction;
+    const scrollValue = Number(e.target.scrollLeft / e.target.clientWidth) || Number(e.target.scrollTop / e.target.clientHeight);
     if (prevScroll.current - scrollValue > 0) {
       prevIndex = Math.ceil(scrollValue);
       direction = Math.floor(scrollValue);
@@ -2006,7 +1974,7 @@ function Content(_ref4) {
       direction = Math.ceil(scrollValue);
       prevIndex = Math.floor(scrollValue);
     }
-    var unitScroll = Math.abs(prevIndex - scrollValue);
+    let unitScroll = Math.abs(prevIndex - scrollValue);
     if (unitScroll > 1) {
       unitScroll = 1;
       prevIndex = direction;
@@ -2014,56 +1982,64 @@ function Content(_ref4) {
     prevScroll.current = scrollValue;
     moveIndicator(unitScroll, prevIndex, direction, scrollValue);
   };
-  useLayoutEffect(function () {
-    var currIndex = links.indexOf(defaultKey);
+  useLayoutEffect(() => {
+    const currIndex = links.indexOf(defaultKey);
     snapTo(currIndex, true);
     moveIndicator(1, currIndex, currIndex);
   }, [links, indicatorRef]);
-  var _children = useMemo(function () {
-    return children && React.Children.map(children, function (child) {
+  const _children = useMemo(() => {
+    return children && React.Children.map(children, child => {
       if (React.isValidElement(child) && child.props.__TYPE === 'Pane') {
         return React.cloneElement(child, {
-          style: _extends({}, paneStyle, child.props.style),
+          style: {
+            ...paneStyle,
+            ...child.props.style
+          },
           className: [child.props.className, paneClass].join(' ').trim()
         });
       }
       return child;
     });
   }, [children, paneClass]);
-  var defaultStyle = {
+  const defaultStyle = {
     position: 'relative',
     display: 'flex',
     flexDirection: propValues.flexDirection,
     flexGrow: '1',
-    overflow: 'auto',
-    WebkitOverFlowScrolling: 'auto'
+    overflow: 'auto'
   };
-  return /*#__PURE__*/React.createElement("div", _extends({
+  return /*#__PURE__*/React.createElement("div", Object.assign({
     className: [styles['tab-content'], className].join(' ').trim(),
     ref: contentRef,
     onScroll: handleScroll,
-    style: _extends({}, defaultStyle, style)
+    style: {
+      ...defaultStyle,
+      ...style
+    }
   }, rest), _children);
 }
 Content.propTypes = {
   paneClass: propTypes.string,
   paneStyle: propTypes.object
 };
-function Pane(_ref5) {
-  var children = _ref5.children,
-    eventKey = _ref5.eventKey,
-    rest = _objectWithoutPropertiesLoose(_ref5, _excluded5);
-  var paneRef = useRef(null);
-  var _useContext4 = useContext(TabProvider),
-    eventHandler = _useContext4.eventHandler,
-    events = _useContext4.events,
-    snapTo = _useContext4.snapTo;
-  var currentEvent = eventHandler[0];
-  var links = events[0];
-  useEffect(function () {
+function Pane({
+  children,
+  eventKey,
+  __TYPE,
+  ...rest
+}) {
+  const paneRef = useRef(null);
+  const {
+    eventHandler,
+    events,
+    snapTo
+  } = useContext(TabProvider);
+  const [currentEvent] = eventHandler;
+  const [links] = events;
+  useEffect(() => {
     if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey));
   });
-  return /*#__PURE__*/React.createElement("div", _extends({
+  return /*#__PURE__*/React.createElement("div", Object.assign({
     ref: paneRef
   }, rest), children);
 }

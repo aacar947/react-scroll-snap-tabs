@@ -1,15 +1,15 @@
 /* add css module styles here (optional) */
-._XaRX6,
-._3vo4o {
+._styles-module__tab-content__XaRX6,
+._styles-module__tab-nav__3vo4o {
   -ms-overflow-style: none; /*IE 11*/
   overflow: -moz-scrollbars-none; /*FF*/
   scrollbar-width: none; /*FF*/
 }
-._XaRX6::-webkit-scrollbar,
-._3vo4o::-webkit-scrollbar {
+._styles-module__tab-content__XaRX6::-webkit-scrollbar,
+._styles-module__tab-nav__3vo4o::-webkit-scrollbar {
   display: none;
 }
-._XaRX6 > * {
+._styles-module__tab-content__XaRX6 > * {
   min-width: 100%;
   min-height: 100%;
 }

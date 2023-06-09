@@ -1129,7 +1129,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 });
 
-var styles = {"tab-content":"_XaRX6","tab-nav":"_3vo4o"};
+var styles = {"tab-content":"_styles-module__tab-content__XaRX6","tab-nav":"_styles-module__tab-nav__3vo4o"};
 
 var defaultOptions = {
   duration: 300,
@@ -2038,8 +2038,7 @@ function Content(_ref4) {
     display: 'flex',
     flexDirection: propValues.flexDirection,
     flexGrow: '1',
-    overflow: 'auto',
-    WebkitOverFlowScrolling: 'auto'
+    overflow: 'auto'
   };
   return /*#__PURE__*/React__default.createElement("div", _extends({
     className: [styles['tab-content'], className].join(' ').trim(),
