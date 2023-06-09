@@ -430,6 +430,8 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
       const delta = _targetIndex - _prevIndex
       let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
       _progress = Math.min(1, Math.max(_progress, 0))
+      console.log({ _prevIndex, _targetIndex, scrollValue })
+      _progress = _progress > 0.995 ? 1 : _progress
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
         progress: _progress,
@@ -440,8 +442,11 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
 
   const handleScroll = (e) => {
     let prevIndex, direction
-    const scrollValue =
-      Number(e.target.scrollLeft / e.target.clientWidth) || Number(e.target.scrollTop / e.target.clientHeight)
+    const container = e.target
+    let scrollValue =
+      Number(container.scrollLeft / container.clientWidth) ||
+      Number(container.scrollTop / container.clientHeight)
+    scrollValue = Number(scrollValue.toFixed(2))
     if (prevScroll.current - scrollValue > 0) {
       prevIndex = Math.ceil(scrollValue)
       direction = Math.floor(scrollValue)
