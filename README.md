@@ -28,7 +28,7 @@
 1. [Link Component Props](#link-component-props)
 1. [Content Component Props](#content-component-props)
 1. [Pane Component Props](#pane-component-props)
-1. [Easing Function](#easing-function)
+1. [Easing Functions](#easing-functions)
 1. [onIndicatorMove Event](#onindicatormove-event)
 1. [How Indicator Works](#how-indicator-works)
 
@@ -225,7 +225,7 @@ In the navigation component, you can utilize the same props as described previou
 | :------- | :----- | :------ | :---------------------------------------------------------------------------- |
 | eventKey | string |         | The event key that corresponds to the link component with the same event key. |
 
-## Easing Function
+## Easing Functions
 
 You can use predefined easing functions by providing either "ease-in", "ease-out", or "ease-in-out" string values. If a random string value is provided, the default easing function will be (t) => t (linear). Alternatively, you can provide your own easing function that accepts a number argument between 0 and 1 and returns a number between 0 and 1. You can find more about easing functions on [easings.net](https://easings.net/#).
 
