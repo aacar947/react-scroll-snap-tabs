@@ -237,6 +237,7 @@ function Nav({
   const defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
+    flex: '0 0 auto',
     position: 'relative',
     overflow: 'auto',
     scrollbarWidth: 'none'
@@ -440,6 +441,7 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
   }
 
   const handleScroll = (e) => {
+    if (e.target !== contentRef.current) return
     let prevIndex, direction
     const container = e.target
     let scrollValue =
@@ -517,7 +519,7 @@ Content.propTypes = {
   paneStyle: PropTypes.object
 }
 
-function Pane({ children, eventKey, __TYPE, ...rest }) {
+function Pane({ children, eventKey, __TYPE, style, ...rest }) {
   const paneRef = useRef(null)
   const { eventHandler, events, snapTo } = useContext(TabProvider)
   const [currentEvent] = eventHandler
@@ -528,7 +530,7 @@ function Pane({ children, eventKey, __TYPE, ...rest }) {
   })
 
   return (
-    <div ref={paneRef} {...rest}>
+    <div ref={paneRef} style={{ overflow: 'auto', ...style }} {...rest}>
       {children}
     </div>
   )
