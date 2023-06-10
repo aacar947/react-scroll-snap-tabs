@@ -256,7 +256,7 @@ export function useScrollSnap({
   const getSnapPosition = useCallback(
     (deltaLeft, deltaTop) => {
       const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
-      if (positionsInViewport.length === 0) snapPositionList.current[0]
+      if (positionsInViewport.length === 0) return activePosition.current
       const index =
         deltaLeft < 0 || deltaTop < 0
           ? positionsInViewport[0].index + 1
