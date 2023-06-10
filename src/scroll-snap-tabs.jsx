@@ -429,7 +429,7 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
       }
 
       const delta = _targetIndex - _prevIndex
-      let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
+      let _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
       _progress = Math.min(1, Math.max(_progress, 0))
       _progress = _progress > 0.995 ? 1 : _progress
       onIndicatorMoveRef.current({
