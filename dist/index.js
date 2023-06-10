@@ -1273,8 +1273,8 @@ function useScrollSnap(_ref) {
     onSnapStart = _ref.onSnapStart,
     onSnap = _ref.onSnap;
   var _useState = React.useState(null),
-    windowDimension = _useState[0],
-    setWindowDimension = _useState[1];
+    windowSize = _useState[0],
+    setWindowSize = _useState[1];
   var isInteracting = React.useRef(false);
   var animation = React.useRef(null);
   var snapPositionList = React.useRef([]);
@@ -1305,8 +1305,15 @@ function useScrollSnap(_ref) {
     };
     var query = "[data-snap-container-id=\"" + index.current + "\"] " + childrenSelector;
     snapPositionList.current = Array.from(scrollContainerRef.current.querySelectorAll(query)).reduce(reduceToSnapPositions, []);
+    if (!activePosition.current || !scrollContainerRef.current) return;
+    var container = scrollContainerRef.current;
+    activePosition.current = snapPositionList.current[activePosition.current.index];
+    container.scrollLeft = activePosition.current.left;
+    container.scrollTop = activePosition.current.top;
+  }, [childrenSelector, windowSize]);
+  React.useLayoutEffect(function () {
     activePosition.current = snapPositionList.current[0];
-  }, [childrenSelector, windowDimension]);
+  }, []);
   var getScrollPosition = React.useCallback(function () {
     var container = scrollContainerRef.current;
     return {
@@ -1490,7 +1497,7 @@ function useScrollSnap(_ref) {
     passive: true
   });
   useEventListener('resize', function () {
-    return setWindowDimension({
+    return setWindowSize({
       height: window.innerHeight,
       width: window.innerWidth
     });
@@ -1513,7 +1520,8 @@ function useScrollSnap(_ref) {
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo: snapTo,
-    isInteracting: isInteracting
+    isInteracting: isInteracting,
+    windowSize: windowSize
   };
 }
 function useScrollIntoView(containerRef, duration, easing) {
@@ -1619,7 +1627,7 @@ var _excluded = ["children", "defaultKey", "eventKeys", "style", "className", "l
   _excluded2 = ["eventKeys", "className", "activeLinkClass", "activeLinkStyle", "indicatorColor", "indicatorClass", "indicatorSize", "indicatorStyle", "onIndicatorMove", "indicatorParentStyle", "indicatorParentClass", "scrollIntoViewDuration", "scrollIntoViewEasing", "scrollIntoViewOffset", "children", "style", "linkStyle", "linkClass", "__TYPE"],
   _excluded3 = ["eventKey", "className", "children", "style", "activeStyle", "activeClass", "__TYPE"],
   _excluded4 = ["children", "style", "paneStyle", "paneClass", "className"],
-  _excluded5 = ["children", "eventKey", "__TYPE"];
+  _excluded5 = ["children", "eventKey", "__TYPE", "style"];
 var TabProvider = React__default.createContext();
 var LAYOUT_PROP_NAMES = {
   vertical: {
@@ -1824,6 +1832,7 @@ function Nav(_ref2) {
   var defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
+    flex: '0 0 auto',
     position: 'relative',
     overflow: 'auto',
     scrollbarWidth: 'none'
@@ -1855,7 +1864,7 @@ Nav.propTypes = {
   activeLinkStyle: propTypes.object,
   indicatorColor: propTypes.string,
   indicatorClass: propTypes.string,
-  indicatorSize: propTypes.number,
+  indicatorSize: propTypes.string,
   indicatorStyle: propTypes.object,
   onIndicatorMove: propTypes.func,
   linkStyle: propTypes.object,
@@ -1951,7 +1960,8 @@ function Content(_ref4) {
       onSnap: onSnap
     })),
     snapTo = _useScrollSnap.snapTo,
-    isInteracting = _useScrollSnap.isInteracting;
+    isInteracting = _useScrollSnap.isInteracting,
+    windowSize = _useScrollSnap.windowSize;
   React.useLayoutEffect(function () {
     _snapTo.current = snapTo;
   }, [snapTo]);
@@ -1992,6 +2002,7 @@ function Content(_ref4) {
       var delta = _targetIndex - _prevIndex;
       var _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
       _progress = Math.min(1, Math.max(_progress, 0));
+      _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
         progress: _progress,
@@ -2000,8 +2011,11 @@ function Content(_ref4) {
     }
   };
   var handleScroll = function handleScroll(e) {
+    if (e.target !== contentRef.current) return;
     var prevIndex, direction;
-    var scrollValue = Number(e.target.scrollLeft / e.target.clientWidth) || Number(e.target.scrollTop / e.target.clientHeight);
+    var container = e.target;
+    var scrollValue = Number(container.scrollLeft / container.clientWidth) || Number(container.scrollTop / container.clientHeight);
+    scrollValue = Number(scrollValue.toFixed(2));
     if (prevScroll.current - scrollValue > 0) {
       prevIndex = Math.ceil(scrollValue);
       direction = Math.floor(scrollValue);
@@ -2022,6 +2036,10 @@ function Content(_ref4) {
     snapTo(currIndex, true);
     moveIndicator(1, currIndex, currIndex);
   }, [links, indicatorRef]);
+  React.useLayoutEffect(function () {
+    var index = links.indexOf(currentEvent);
+    moveIndicator(1, index, index);
+  }, [windowSize]);
   var _children = React.useMemo(function () {
     return children && React__default.Children.map(children, function (child) {
       if (React__default.isValidElement(child) && child.props.__TYPE === 'Pane') {
@@ -2054,6 +2072,7 @@ Content.propTypes = {
 function Pane(_ref5) {
   var children = _ref5.children,
     eventKey = _ref5.eventKey,
+    style = _ref5.style,
     rest = _objectWithoutPropertiesLoose(_ref5, _excluded5);
   var paneRef = React.useRef(null);
   var _useContext4 = React.useContext(TabProvider),
@@ -2066,7 +2085,10 @@ function Pane(_ref5) {
     if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey));
   });
   return /*#__PURE__*/React__default.createElement("div", _extends({
-    ref: paneRef
+    ref: paneRef,
+    style: _extends({
+      overflow: 'auto'
+    }, style)
   }, rest), children);
 }
 Pane.propTypes = {

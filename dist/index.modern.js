@@ -1229,7 +1229,7 @@ function useScrollSnap({
   onSnapStart,
   onSnap
 }) {
-  const [windowDimension, setWindowDimension] = useState(null);
+  const [windowSize, setWindowSize] = useState(null);
   const isInteracting = useRef(false);
   const animation = useRef(null);
   const snapPositionList = useRef([]);
@@ -1258,8 +1258,15 @@ function useScrollSnap({
     }];
     const query = `[data-snap-container-id="${index.current}"] ${childrenSelector}`;
     snapPositionList.current = Array.from(scrollContainerRef.current.querySelectorAll(query)).reduce(reduceToSnapPositions, []);
+    if (!activePosition.current || !scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    activePosition.current = snapPositionList.current[activePosition.current.index];
+    container.scrollLeft = activePosition.current.left;
+    container.scrollTop = activePosition.current.top;
+  }, [childrenSelector, windowSize]);
+  useLayoutEffect(() => {
     activePosition.current = snapPositionList.current[0];
-  }, [childrenSelector, windowDimension]);
+  }, []);
   const getScrollPosition = useCallback(() => {
     const container = scrollContainerRef.current;
     return {
@@ -1443,7 +1450,7 @@ function useScrollSnap({
   useEventListener('wheel', onInput, scrollContainerRef.current, passiveSupported && {
     passive: true
   });
-  useEventListener('resize', () => setWindowDimension({
+  useEventListener('resize', () => setWindowSize({
     height: window.innerHeight,
     width: window.innerWidth
   }), window);
@@ -1463,7 +1470,8 @@ function useScrollSnap({
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo,
-    isInteracting
+    isInteracting,
+    windowSize
   };
 }
 function useScrollIntoView(containerRef, duration = 250, easing = 'ease-out') {
@@ -1773,6 +1781,7 @@ function Nav({
   const defaultStyle = {
     display: 'flex',
     flexDirection: propValues.flexDirection,
+    flex: '0 0 auto',
     position: 'relative',
     overflow: 'auto',
     scrollbarWidth: 'none'
@@ -1813,7 +1822,7 @@ Nav.propTypes = {
   activeLinkStyle: propTypes.object,
   indicatorColor: propTypes.string,
   indicatorClass: propTypes.string,
-  indicatorSize: propTypes.number,
+  indicatorSize: propTypes.string,
   indicatorStyle: propTypes.object,
   onIndicatorMove: propTypes.func,
   linkStyle: propTypes.object,
@@ -1910,7 +1919,8 @@ function Content({
   }, [currentEvent]);
   const {
     snapTo,
-    isInteracting
+    isInteracting,
+    windowSize
   } = useScrollSnap({
     ...options,
     scrollContainerRef: contentRef,
@@ -1957,6 +1967,7 @@ function Content({
       const delta = _targetIndex - _prevIndex;
       let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
       _progress = Math.min(1, Math.max(_progress, 0));
+      _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
         progress: _progress,
@@ -1965,8 +1976,11 @@ function Content({
     }
   };
   const handleScroll = e => {
+    if (e.target !== contentRef.current) return;
     let prevIndex, direction;
-    const scrollValue = Number(e.target.scrollLeft / e.target.clientWidth) || Number(e.target.scrollTop / e.target.clientHeight);
+    const container = e.target;
+    let scrollValue = Number(container.scrollLeft / container.clientWidth) || Number(container.scrollTop / container.clientHeight);
+    scrollValue = Number(scrollValue.toFixed(2));
     if (prevScroll.current - scrollValue > 0) {
       prevIndex = Math.ceil(scrollValue);
       direction = Math.floor(scrollValue);
@@ -1987,6 +2001,10 @@ function Content({
     snapTo(currIndex, true);
     moveIndicator(1, currIndex, currIndex);
   }, [links, indicatorRef]);
+  useLayoutEffect(() => {
+    const index = links.indexOf(currentEvent);
+    moveIndicator(1, index, index);
+  }, [windowSize]);
   const _children = useMemo(() => {
     return children && React.Children.map(children, child => {
       if (React.isValidElement(child) && child.props.__TYPE === 'Pane') {
@@ -2026,6 +2044,7 @@ function Pane({
   children,
   eventKey,
   __TYPE,
+  style,
   ...rest
 }) {
   const paneRef = useRef(null);
@@ -2040,7 +2059,11 @@ function Pane({
     if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey));
   });
   return /*#__PURE__*/React.createElement("div", Object.assign({
-    ref: paneRef
+    ref: paneRef,
+    style: {
+      overflow: 'auto',
+      ...style
+    }
   }, rest), children);
 }
 Pane.propTypes = {
