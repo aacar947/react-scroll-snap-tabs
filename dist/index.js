@@ -1365,6 +1365,7 @@ function useScrollSnap(_ref) {
   }, [getScrollPosition, snapPositionList]);
   var getSnapPosition = React.useCallback(function (deltaLeft, deltaTop) {
     var positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
+    if (positionsInViewport.length === 0) return activePosition.current;
     var index = deltaLeft < 0 || deltaTop < 0 ? positionsInViewport[0].index + 1 : positionsInViewport[positionsInViewport.length - 1].index - 1;
     return snapPositionList.current[index] || positionsInViewport[0];
   }, [getPositionsInViewport]);
@@ -2000,7 +2001,7 @@ function Content(_ref4) {
         _targetIndex = direction === activeIndex ? direction : prevIndex;
       }
       var delta = _targetIndex - _prevIndex;
-      var _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
+      var _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
       _progress = Math.min(1, Math.max(_progress, 0));
       _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({

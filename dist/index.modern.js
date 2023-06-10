@@ -1319,6 +1319,7 @@ function useScrollSnap({
   }, [getScrollPosition, snapPositionList]);
   const getSnapPosition = useCallback((deltaLeft, deltaTop) => {
     const positionsInViewport = getPositionsInViewport(scrollContainerRef.current);
+    if (positionsInViewport.length === 0) return activePosition.current;
     const index = deltaLeft < 0 || deltaTop < 0 ? positionsInViewport[0].index + 1 : positionsInViewport[positionsInViewport.length - 1].index - 1;
     return snapPositionList.current[index] || positionsInViewport[0];
   }, [getPositionsInViewport]);
@@ -1965,7 +1966,7 @@ function Content({
         _targetIndex = direction === activeIndex ? direction : prevIndex;
       }
       const delta = _targetIndex - _prevIndex;
-      let _progress = delta === 0 ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
+      let _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
       _progress = Math.min(1, Math.max(_progress, 0));
       _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({
