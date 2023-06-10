@@ -6,6 +6,14 @@
 
 <br>
 
+[**Demo 1**](https://stackblitz.com/edit/stackblitz-starters-wpxap2?file=src%2FApp.js)
+
+[**Demo 2**](https://stackblitz.com/edit/stackblitz-starters-wxjgq7?file=src%2FApp.js)
+
+[**Demo 3**](https://stackblitz.com/edit/stackblitz-starters-jv63is?file=src%2FApp.js)
+
+<br>
+
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 48px !important;width: 174px !important;" height="48" width="174" >](https://www.buymeacoffee.com/aacar)
 
 <br>
@@ -331,6 +339,10 @@ export default App
 
 ## How Indicator Works
 
+The tabs include an indicator section that consists of two elements: an indicator and its parent. The parent elemet dynamically adjusts its position based on the active tab, while the indicator represents the actual visible part.
+
+When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the target link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
+
 ### Example
 
 ```jsx
@@ -361,8 +373,6 @@ const App = () => {
 export default App
 ```
 
-When the user scrolls through the content area, if the layout is 'vertical', the indicator parent adjusts its left and width values to align with the target link element's left and width values. If the layout is 'horizontal', it aligns its top and height values.
-
 To provide a visual representation of this behavior, consider the following HTML code, which showcases a rendered indicator parent and indicator elements in a vertical layout application:
 
 ```html
@@ -384,6 +394,12 @@ Result:
 In the provided code, the indicator parent element is represented by the \<div> with the class name 'indicator-parent'. It is positioned absolutely and has a red border. Its left and width values are adjusted dynamically based on the corresponding link element's left and width values.
 
 Inside the indicator parent, the indicator element is represented by the \<div> with the class name 'indicator'. The background color is black.
+
+<br>
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 48px !important;width: 174px !important;" height="48" width="174" >](https://www.buymeacoffee.com/aacar)
+
+<br>
 
 ## License
 
