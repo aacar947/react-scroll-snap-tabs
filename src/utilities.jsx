@@ -180,7 +180,6 @@ export function useScrollSnap({
     activePosition.current = snapPositionList.current[activePosition.current.index]
     container.scrollLeft = activePosition.current.left
     container.scrollTop = activePosition.current.top
-    console.log('size changed', activePosition.current.left)
   }, [childrenSelector, windowSize])
 
   useLayoutEffect(() => {
@@ -257,7 +256,7 @@ export function useScrollSnap({
   const getSnapPosition = useCallback(
     (deltaLeft, deltaTop) => {
       const positionsInViewport = getPositionsInViewport(scrollContainerRef.current)
-
+      if (positionsInViewport.length === 0) snapPositionList.current[0]
       const index =
         deltaLeft < 0 || deltaTop < 0
           ? positionsInViewport[0].index + 1
