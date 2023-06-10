@@ -4,7 +4,11 @@
 
 [![NPM](https://img.shields.io/npm/v/react-scroll-snap-tabs.svg)](https://www.npmjs.com/package/react-scroll-snap-tabs) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
-<a href="https://www.buymeacoffee.com/aacar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 48px !important;width: 174px !important;" ></a>
+<br>
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" alt="Buy Me A Coffee" style="height: 48px !important;width: 174px !important;" height="48" width="174" >](https://www.buymeacoffee.com/aacar)
+
+<br>
 
 ## Table Of Contents
 
@@ -23,7 +27,7 @@
 ## Install
 
 ```bash
-npm install --save react-scroll-snap-tabs
+npm i react-scroll-snap-tabs
 ```
 
 ## Basic Usage
@@ -75,11 +79,7 @@ const App = () => {
 
   return (
     <div style={{ width: '400px', height: '100vh', backgroundColor: '#333' }}>
-      <Tabs
-        style={{ borderRight: '1px solid gray' }}
-        snapDuration={300}
-        defaultKey='tab3'
-      >
+      <Tabs style={{ borderRight: '1px solid gray' }} snapDuration={300} defaultKey='tab3'>
         <Tabs.Nav
           activeLinkStyle={{ color: 'white' }}
           linkStyle={{ whiteSpace: 'nowrap' }}
@@ -198,10 +198,10 @@ In the navigation component, you can utilize the same props as described previou
 
 ## Link Component Props
 
-| Name        | Type   | Default | Description                                                                     |
-| :---------- | :----- | :------ | :------------------------------------------------------------------------------ |
-| activeClass | string |         | The class name to be applied to the link when it's active.                      |
-| activeStyle | object |         | The style to be applied to the link when it is active.                          |
+| Name        | Type   | Default | Description                                                                   |
+| :---------- | :----- | :------ | :---------------------------------------------------------------------------- |
+| activeClass | string |         | The class name to be applied to the link when it's active.                    |
+| activeStyle | object |         | The style to be applied to the link when it is active.                        |
 | eventKey    | string |         | The event key that corresponds to the pane component with the same event key. |
 
 ## Content Component Props
@@ -213,8 +213,8 @@ In the navigation component, you can utilize the same props as described previou
 
 ## Pane Component Props
 
-| Name     | Type   | Default | Description                                                                     |
-| :------- | :----- | :------ | :------------------------------------------------------------------------------ |
+| Name     | Type   | Default | Description                                                                   |
+| :------- | :----- | :------ | :---------------------------------------------------------------------------- |
 | eventKey | string |         | The event key that corresponds to the link component with the same event key. |
 
 ## Easing Function
@@ -332,6 +332,7 @@ export default App
 ## How Indicator Works
 
 ### Example
+
 ```jsx
 import React from 'react'
 
