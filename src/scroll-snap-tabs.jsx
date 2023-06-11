@@ -300,13 +300,14 @@ Nav.defaultProps = {
 }
 
 function Link({ eventKey, className, children, style, activeStyle, activeClass, __TYPE, ...rest }) {
-  const { eventHandler, events, linkMapRef } = useContext(TabProvider)
+  const { eventHandler, events, linkMapRef, snapTo } = useContext(TabProvider)
   const [selectedTab, setSelectedTab] = eventHandler
-  const [, setLinks] = events
+  const [links, setLinks] = events
   const linkRef = useRef(null)
 
   const handleClick = (e) => {
     setSelectedTab(eventKey)
+    snapTo.current(links.indexOf(eventKey))
   }
 
   useLayoutEffect(() => {
@@ -520,17 +521,8 @@ Content.propTypes = {
 }
 
 function Pane({ children, eventKey, __TYPE, style, ...rest }) {
-  const paneRef = useRef(null)
-  const { eventHandler, events, snapTo } = useContext(TabProvider)
-  const [currentEvent] = eventHandler
-  const [links] = events
-
-  useEffect(() => {
-    if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey))
-  })
-
   return (
-    <div ref={paneRef} style={{ overflow: 'auto', ...style }} {...rest}>
+    <div style={{ overflow: 'auto', ...style }} {...rest}>
       {children}
     </div>
   )

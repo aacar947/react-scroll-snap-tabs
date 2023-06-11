@@ -37,10 +37,10 @@ class Animation {
     this._events = {}
   }
 
-  start() {
+  start(_duration) {
     const timing = this.options.timing
     const update = this.options.update
-    const duration = this.options.duration
+    const duration = _duration || this.options.duration
     if (!window.requestAnimationFrame) {
       update(1)
       if (this._events['end']) {
@@ -195,7 +195,8 @@ export function useScrollSnap({
   }, [])
 
   const snapToDestination = useCallback(
-    (destination, currentPosition) => {
+    (destination, currentPosition, snapDuration, where) => {
+      console.log(snapDuration, where)
       if (!destination) return
       currentPosition = currentPosition || getScrollPosition()
       const xDist = destination.left - currentPosition.left
@@ -227,7 +228,7 @@ export function useScrollSnap({
         clearTimeout(timeOut.current)
         if (onSnap) onSnap(destination.index)
       })
-      animation.current.start()
+      animation.current.start(snapDuration)
     },
     [getScrollPosition, onSnapStart, onSnap]
   )
@@ -281,40 +282,59 @@ export function useScrollSnap({
 
   const isSwipeTresholdExceeded = useCallback(
     (deltaLeft, deltaTop) => {
-      if (Math.abs(deltaLeft) <= 5 && Math.abs(deltaTop) <= 5) return false
+      if (deltaLeft <= 5 && deltaTop <= 5) return false
       const calcWithInertia = () => {
         const DEC = 625 * Math.pow(10, -6)
-        const speed =
-          swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed
+        const speed = deltaLeft > deltaTop ? swipe.current.xSpeed : swipe.current.ySpeed
         return (speed * speed) / (2 * DEC) > swipeThreshold
       }
 
-      return Math.abs(deltaTop) > swipeThreshold || Math.abs(deltaLeft) > swipeThreshold || calcWithInertia()
+      return deltaTop > swipeThreshold || deltaLeft > swipeThreshold || calcWithInertia()
     },
     [swipeThreshold]
   )
 
+  const getSnapDuration = useCallback((swipe, destination, scroll, leftSwipe) => {
+    const delta = leftSwipe
+      ? Math.abs(destination.left - scroll.left)
+      : Math.abs(destination.top - scroll.top)
+    const speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed
+    const snapDuration = delta / speed
+    return snapDuration > duration ? duration : 50
+  }, [])
   const findAPositionAndSnap = useCallback(() => {
     if (!animation.current.stopped) return
 
     const scroll = getScrollPosition()
     const deltaLeft = (scrollStart.current?.left || activePosition.current.left) - scroll.left
     const deltaTop = (scrollStart.current?.top || activePosition.current.top) - scroll.top
+    const absDeltaLeft = Math.abs(deltaLeft)
+    const absDeltaTop = Math.abs(deltaTop)
 
-    let destination
+    let destination, snapDuration
     const tresholdExceeded = swipe.current
-      ? isSwipeTresholdExceeded(deltaLeft, deltaTop)
-      : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold
+      ? isSwipeTresholdExceeded(absDeltaLeft, absDeltaTop)
+      : absDeltaLeft > threshold || absDeltaTop > threshold
 
     if (tresholdExceeded) {
       const snapPosition = getSnapPosition(deltaLeft, deltaTop)
       destination = snapPosition
+      snapDuration = swipe.current
+        ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop)
+        : null
     } else {
       destination = getNearestPositionInViewport()
     }
 
-    snapToDestination(destination, scroll)
-  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, snapToDestination])
+    snapToDestination(destination, scroll, snapDuration, 'find and snap')
+  }, [
+    getScrollPosition,
+    isSwipeTresholdExceeded,
+    threshold,
+    getSnapPosition,
+    getSnapDuration,
+    snapToDestination
+  ])
 
   const enableScroll = useCallback(() => {
     const container = scrollContainerRef.current
@@ -352,7 +372,7 @@ export function useScrollSnap({
     animation.current?.stop()
     enableScroll()
     isInteracting.current = true
-  }, [enableScroll])
+  }, [enableScroll, getScrollPosition])
 
   const onInputEnd = useCallback(() => {
     isInteracting.current = false
@@ -362,10 +382,10 @@ export function useScrollSnap({
 
   const onTouchStart = useCallback(
     (e) => {
-      const touch = e.changedTouches[0]
       swipe.current = {}
-      swipe.current.xStart = touch.clientX
-      swipe.current.yStart = touch.clientY
+      const scroll = getScrollPosition()
+      swipe.current.xStart = scroll.left
+      swipe.current.yStart = scroll.top
       swipe.current.startTime = window.performance ? window.performance.now() : Date.now()
 
       onInputStart()
@@ -376,19 +396,18 @@ export function useScrollSnap({
   const onTouchEnd = useCallback(
     (e) => {
       if (!swipe.current) return
-      const touch = e.changedTouches[0]
       const endTime = window.performance ? window.performance.now() : Date.now()
       const travelTime = endTime - swipe.current.startTime
-      swipe.current.xSpeed = Math.abs(swipe.current.xStart - touch.clientX) / travelTime
-      swipe.current.ySpeed = Math.abs(swipe.current.yStart - touch.clientY) / travelTime
-
+      const scroll = getScrollPosition()
+      swipe.current.xSpeed = Math.abs((swipe.current.xStart - scroll.left) / travelTime)
+      swipe.current.ySpeed = Math.abs((swipe.current.yStart - scroll.top) / travelTime)
       const container = scrollContainerRef.current
       // to prevent scroll inertia bug on touch devices
       container.style.overflow = 'hidden'
       onInputEnd()
       swipe.current = null
     },
-    [onInputEnd]
+    [onInputEnd, getScrollPosition]
   )
 
   const passiveSupported = useMemo(() => {
@@ -486,12 +505,13 @@ export function useScrollSnap({
 
   const snapTo = useCallback(
     (index, disableAnimation = false) => {
-      if (disableAnimation) {
-        const { top, left } = snapPositionList.current[index] || snapPositionList.current[0]
-        scrollContainerRef.current.scrollTo({ top, left })
-        return
-      }
-      snapToDestination(snapPositionList.current[index])
+      if (!animation.current.stopped)
+        if (disableAnimation) {
+          const { top, left } = snapPositionList.current[index] || snapPositionList.current[0]
+          scrollContainerRef.current.scrollTo({ top, left })
+          return
+        }
+      snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo')
     },
     [snapToDestination, snapPositionList]
   )
