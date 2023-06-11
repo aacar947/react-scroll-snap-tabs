@@ -428,13 +428,13 @@ function Content({ children, style, paneStyle, paneClass, className, ...rest }) 
         _targetIndex = direction === activeIndex ? direction : prevIndex
       }
 
-      const delta = _targetIndex - _prevIndex
-      let _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta)
+      const path = _targetIndex - _prevIndex
+      let _progress = !path ? 1 : Math.abs((scrollValue - _prevIndex) / path)
       _progress = Math.min(1, Math.max(_progress, 0))
       _progress = _progress > 0.995 ? 1 : _progress
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
-        progress: _progress,
+        progress: isNaN(_progress) ? 1 : _progress,
         isInteracting: isInteracting.current
       })
     }
