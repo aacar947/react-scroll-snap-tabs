@@ -1135,10 +1135,10 @@ class Animation {
     this.started = false;
     this._events = {};
   }
-  start() {
+  start(_duration) {
     const timing = this.options.timing;
     const update = this.options.update;
-    const duration = this.options.duration;
+    const duration = _duration || this.options.duration;
     if (!window.requestAnimationFrame) {
       update(1);
       if (this._events['end']) {
@@ -1274,8 +1274,9 @@ function useScrollSnap({
       left: container.scrollLeft
     };
   }, []);
-  const snapToDestination = useCallback((destination, currentPosition) => {
+  const snapToDestination = useCallback((destination, currentPosition, snapDuration, where) => {
     var _animation$current;
+    console.log(snapDuration, where);
     if (!destination) return;
     currentPosition = currentPosition || getScrollPosition();
     const xDist = destination.left - currentPosition.left;
@@ -1304,7 +1305,7 @@ function useScrollSnap({
       clearTimeout(timeOut.current);
       if (onSnap) onSnap(destination.index);
     });
-    animation.current.start();
+    animation.current.start(snapDuration);
   }, [getScrollPosition, onSnapStart, onSnap]);
   const getPositionsInViewport = useCallback(container => {
     const scroll = getScrollPosition();
@@ -1335,30 +1336,39 @@ function useScrollSnap({
     })[0];
   }, [getPositionsInViewport, getScrollPosition]);
   const isSwipeTresholdExceeded = useCallback((deltaLeft, deltaTop) => {
-    if (Math.abs(deltaLeft) <= 5 && Math.abs(deltaTop) <= 5) return false;
+    if (deltaLeft <= 5 && deltaTop <= 5) return false;
     const calcWithInertia = () => {
       const DEC = 625 * Math.pow(10, -6);
-      const speed = swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed;
+      const speed = deltaLeft > deltaTop ? swipe.current.xSpeed : swipe.current.ySpeed;
       return speed * speed / (2 * DEC) > swipeThreshold;
     };
-    return Math.abs(deltaTop) > swipeThreshold || Math.abs(deltaLeft) > swipeThreshold || calcWithInertia();
+    return deltaTop > swipeThreshold || deltaLeft > swipeThreshold || calcWithInertia();
   }, [swipeThreshold]);
+  const getSnapDuration = useCallback((swipe, destination, scroll, leftSwipe) => {
+    const delta = leftSwipe ? Math.abs(destination.left - scroll.left) : Math.abs(destination.top - scroll.top);
+    const speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed;
+    const snapDuration = delta / speed;
+    return snapDuration > duration ? duration : 50;
+  }, []);
   const findAPositionAndSnap = useCallback(() => {
     var _scrollStart$current, _scrollStart$current2;
     if (!animation.current.stopped) return;
     const scroll = getScrollPosition();
     const deltaLeft = (((_scrollStart$current = scrollStart.current) === null || _scrollStart$current === void 0 ? void 0 : _scrollStart$current.left) || activePosition.current.left) - scroll.left;
     const deltaTop = (((_scrollStart$current2 = scrollStart.current) === null || _scrollStart$current2 === void 0 ? void 0 : _scrollStart$current2.top) || activePosition.current.top) - scroll.top;
-    let destination;
-    const tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(deltaLeft, deltaTop) : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold;
+    const absDeltaLeft = Math.abs(deltaLeft);
+    const absDeltaTop = Math.abs(deltaTop);
+    let destination, snapDuration;
+    const tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(absDeltaLeft, absDeltaTop) : absDeltaLeft > threshold || absDeltaTop > threshold;
     if (tresholdExceeded) {
       const snapPosition = getSnapPosition(deltaLeft, deltaTop);
       destination = snapPosition;
+      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop) : null;
     } else {
       destination = getNearestPositionInViewport();
     }
-    snapToDestination(destination, scroll);
-  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, snapToDestination]);
+    snapToDestination(destination, scroll, snapDuration, 'find and snap');
+  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, getSnapDuration, snapToDestination]);
   const enableScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     container.style.overflow = 'auto';
@@ -1385,32 +1395,32 @@ function useScrollSnap({
     (_animation$current2 = animation.current) === null || _animation$current2 === void 0 ? void 0 : _animation$current2.stop();
     enableScroll();
     isInteracting.current = true;
-  }, [enableScroll]);
+  }, [enableScroll, getScrollPosition]);
   const onInputEnd = useCallback(() => {
     isInteracting.current = false;
     findAPositionAndSnap();
     scrollStart.current = null;
   }, [findAPositionAndSnap]);
   const onTouchStart = useCallback(e => {
-    const touch = e.changedTouches[0];
     swipe.current = {};
-    swipe.current.xStart = touch.clientX;
-    swipe.current.yStart = touch.clientY;
+    const scroll = getScrollPosition();
+    swipe.current.xStart = scroll.left;
+    swipe.current.yStart = scroll.top;
     swipe.current.startTime = window.performance ? window.performance.now() : Date.now();
     onInputStart();
   }, [onInputStart]);
   const onTouchEnd = useCallback(e => {
     if (!swipe.current) return;
-    const touch = e.changedTouches[0];
     const endTime = window.performance ? window.performance.now() : Date.now();
     const travelTime = endTime - swipe.current.startTime;
-    swipe.current.xSpeed = Math.abs(swipe.current.xStart - touch.clientX) / travelTime;
-    swipe.current.ySpeed = Math.abs(swipe.current.yStart - touch.clientY) / travelTime;
+    const scroll = getScrollPosition();
+    swipe.current.xSpeed = Math.abs((swipe.current.xStart - scroll.left) / travelTime);
+    swipe.current.ySpeed = Math.abs((swipe.current.yStart - scroll.top) / travelTime);
     const container = scrollContainerRef.current;
     container.style.overflow = 'hidden';
     onInputEnd();
     swipe.current = null;
-  }, [onInputEnd]);
+  }, [onInputEnd, getScrollPosition]);
   const passiveSupported = useMemo(() => {
     let supported = false;
     try {
@@ -1456,7 +1466,7 @@ function useScrollSnap({
     width: window.innerWidth
   }), window);
   const snapTo = useCallback((index, disableAnimation = false) => {
-    if (disableAnimation) {
+    if (!animation.current.stopped) if (disableAnimation) {
       const {
         top,
         left
@@ -1467,7 +1477,7 @@ function useScrollSnap({
       });
       return;
     }
-    snapToDestination(snapPositionList.current[index]);
+    snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo');
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo,
@@ -1849,13 +1859,15 @@ function Link({
   const {
     eventHandler,
     events,
-    linkMapRef
+    linkMapRef,
+    snapTo
   } = useContext(TabProvider);
   const [selectedTab, setSelectedTab] = eventHandler;
-  const [, setLinks] = events;
+  const [links, setLinks] = events;
   const linkRef = useRef(null);
   const handleClick = e => {
     setSelectedTab(eventKey);
+    snapTo.current(links.indexOf(eventKey));
   };
   useLayoutEffect(() => {
     setLinks(prev => [...prev, eventKey]);
@@ -1965,13 +1977,13 @@ function Content({
         _prevIndex = direction === activeIndex ? prevIndex : direction;
         _targetIndex = direction === activeIndex ? direction : prevIndex;
       }
-      const delta = _targetIndex - _prevIndex;
-      let _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
+      const path = _targetIndex - _prevIndex;
+      let _progress = !path ? 1 : Math.abs((scrollValue - _prevIndex) / path);
       _progress = Math.min(1, Math.max(_progress, 0));
       _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
-        progress: _progress,
+        progress: isNaN(_progress) ? 1 : _progress,
         isInteracting: isInteracting.current
       });
     }
@@ -2048,19 +2060,7 @@ function Pane({
   style,
   ...rest
 }) {
-  const paneRef = useRef(null);
-  const {
-    eventHandler,
-    events,
-    snapTo
-  } = useContext(TabProvider);
-  const [currentEvent] = eventHandler;
-  const [links] = events;
-  useEffect(() => {
-    if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey));
-  });
   return /*#__PURE__*/React.createElement("div", Object.assign({
-    ref: paneRef,
     style: {
       overflow: 'auto',
       ...style

@@ -1171,10 +1171,10 @@ var Animation = /*#__PURE__*/function () {
     this._events = {};
   }
   var _proto = Animation.prototype;
-  _proto.start = function start() {
+  _proto.start = function start(_duration) {
     var timing = this.options.timing;
     var update = this.options.update;
-    var duration = this.options.duration;
+    var duration = _duration || this.options.duration;
     if (!window.requestAnimationFrame) {
       update(1);
       if (this._events['end']) {
@@ -1321,8 +1321,9 @@ function useScrollSnap(_ref) {
       left: container.scrollLeft
     };
   }, []);
-  var snapToDestination = React.useCallback(function (destination, currentPosition) {
+  var snapToDestination = React.useCallback(function (destination, currentPosition, snapDuration, where) {
     var _animation$current;
+    console.log(snapDuration, where);
     if (!destination) return;
     currentPosition = currentPosition || getScrollPosition();
     var xDist = destination.left - currentPosition.left;
@@ -1351,7 +1352,7 @@ function useScrollSnap(_ref) {
       clearTimeout(timeOut.current);
       if (onSnap) onSnap(destination.index);
     });
-    animation.current.start();
+    animation.current.start(snapDuration);
   }, [getScrollPosition, onSnapStart, onSnap]);
   var getPositionsInViewport = React.useCallback(function (container) {
     var scroll = getScrollPosition();
@@ -1381,30 +1382,39 @@ function useScrollSnap(_ref) {
     })[0];
   }, [getPositionsInViewport, getScrollPosition]);
   var isSwipeTresholdExceeded = React.useCallback(function (deltaLeft, deltaTop) {
-    if (Math.abs(deltaLeft) <= 5 && Math.abs(deltaTop) <= 5) return false;
+    if (deltaLeft <= 5 && deltaTop <= 5) return false;
     var calcWithInertia = function calcWithInertia() {
       var DEC = 625 * Math.pow(10, -6);
-      var speed = swipe.current.xSpeed > swipe.current.ySpeed ? swipe.current.xSpeed : swipe.current.ySpeed;
+      var speed = deltaLeft > deltaTop ? swipe.current.xSpeed : swipe.current.ySpeed;
       return speed * speed / (2 * DEC) > swipeThreshold;
     };
-    return Math.abs(deltaTop) > swipeThreshold || Math.abs(deltaLeft) > swipeThreshold || calcWithInertia();
+    return deltaTop > swipeThreshold || deltaLeft > swipeThreshold || calcWithInertia();
   }, [swipeThreshold]);
+  var getSnapDuration = React.useCallback(function (swipe, destination, scroll, leftSwipe) {
+    var delta = leftSwipe ? Math.abs(destination.left - scroll.left) : Math.abs(destination.top - scroll.top);
+    var speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed;
+    var snapDuration = delta / speed;
+    return snapDuration > duration ? duration : 50;
+  }, []);
   var findAPositionAndSnap = React.useCallback(function () {
     var _scrollStart$current, _scrollStart$current2;
     if (!animation.current.stopped) return;
     var scroll = getScrollPosition();
     var deltaLeft = (((_scrollStart$current = scrollStart.current) === null || _scrollStart$current === void 0 ? void 0 : _scrollStart$current.left) || activePosition.current.left) - scroll.left;
     var deltaTop = (((_scrollStart$current2 = scrollStart.current) === null || _scrollStart$current2 === void 0 ? void 0 : _scrollStart$current2.top) || activePosition.current.top) - scroll.top;
-    var destination;
-    var tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(deltaLeft, deltaTop) : Math.abs(deltaLeft) > threshold || Math.abs(deltaTop) > threshold;
+    var absDeltaLeft = Math.abs(deltaLeft);
+    var absDeltaTop = Math.abs(deltaTop);
+    var destination, snapDuration;
+    var tresholdExceeded = swipe.current ? isSwipeTresholdExceeded(absDeltaLeft, absDeltaTop) : absDeltaLeft > threshold || absDeltaTop > threshold;
     if (tresholdExceeded) {
       var snapPosition = getSnapPosition(deltaLeft, deltaTop);
       destination = snapPosition;
+      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop) : null;
     } else {
       destination = getNearestPositionInViewport();
     }
-    snapToDestination(destination, scroll);
-  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, snapToDestination]);
+    snapToDestination(destination, scroll, snapDuration, 'find and snap');
+  }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, getSnapDuration, snapToDestination]);
   var enableScroll = React.useCallback(function () {
     var container = scrollContainerRef.current;
     container.style.overflow = 'auto';
@@ -1431,32 +1441,32 @@ function useScrollSnap(_ref) {
     (_animation$current2 = animation.current) === null || _animation$current2 === void 0 ? void 0 : _animation$current2.stop();
     enableScroll();
     isInteracting.current = true;
-  }, [enableScroll]);
+  }, [enableScroll, getScrollPosition]);
   var onInputEnd = React.useCallback(function () {
     isInteracting.current = false;
     findAPositionAndSnap();
     scrollStart.current = null;
   }, [findAPositionAndSnap]);
   var onTouchStart = React.useCallback(function (e) {
-    var touch = e.changedTouches[0];
     swipe.current = {};
-    swipe.current.xStart = touch.clientX;
-    swipe.current.yStart = touch.clientY;
+    var scroll = getScrollPosition();
+    swipe.current.xStart = scroll.left;
+    swipe.current.yStart = scroll.top;
     swipe.current.startTime = window.performance ? window.performance.now() : Date.now();
     onInputStart();
   }, [onInputStart]);
   var onTouchEnd = React.useCallback(function (e) {
     if (!swipe.current) return;
-    var touch = e.changedTouches[0];
     var endTime = window.performance ? window.performance.now() : Date.now();
     var travelTime = endTime - swipe.current.startTime;
-    swipe.current.xSpeed = Math.abs(swipe.current.xStart - touch.clientX) / travelTime;
-    swipe.current.ySpeed = Math.abs(swipe.current.yStart - touch.clientY) / travelTime;
+    var scroll = getScrollPosition();
+    swipe.current.xSpeed = Math.abs((swipe.current.xStart - scroll.left) / travelTime);
+    swipe.current.ySpeed = Math.abs((swipe.current.yStart - scroll.top) / travelTime);
     var container = scrollContainerRef.current;
     container.style.overflow = 'hidden';
     onInputEnd();
     swipe.current = null;
-  }, [onInputEnd]);
+  }, [onInputEnd, getScrollPosition]);
   var passiveSupported = React.useMemo(function () {
     var supported = false;
     try {
@@ -1507,7 +1517,7 @@ function useScrollSnap(_ref) {
     if (disableAnimation === void 0) {
       disableAnimation = false;
     }
-    if (disableAnimation) {
+    if (!animation.current.stopped) if (disableAnimation) {
       var _ref2 = snapPositionList.current[index] || snapPositionList.current[0],
         top = _ref2.top,
         left = _ref2.left;
@@ -1517,7 +1527,7 @@ function useScrollSnap(_ref) {
       });
       return;
     }
-    snapToDestination(snapPositionList.current[index]);
+    snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo');
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo: snapTo,
@@ -1889,13 +1899,16 @@ function Link(_ref3) {
   var _useContext2 = React.useContext(TabProvider),
     eventHandler = _useContext2.eventHandler,
     events = _useContext2.events,
-    linkMapRef = _useContext2.linkMapRef;
+    linkMapRef = _useContext2.linkMapRef,
+    snapTo = _useContext2.snapTo;
   var selectedTab = eventHandler[0],
     setSelectedTab = eventHandler[1];
-  var setLinks = events[1];
+  var links = events[0],
+    setLinks = events[1];
   var linkRef = React.useRef(null);
   var handleClick = function handleClick(e) {
     setSelectedTab(eventKey);
+    snapTo.current(links.indexOf(eventKey));
   };
   React.useLayoutEffect(function () {
     setLinks(function (prev) {
@@ -2000,13 +2013,13 @@ function Content(_ref4) {
         _prevIndex = direction === activeIndex ? prevIndex : direction;
         _targetIndex = direction === activeIndex ? direction : prevIndex;
       }
-      var delta = _targetIndex - _prevIndex;
-      var _progress = !delta ? 1 : Math.abs((scrollValue - _prevIndex) / delta);
+      var path = _targetIndex - _prevIndex;
+      var _progress = !path ? 1 : Math.abs((scrollValue - _prevIndex) / path);
       _progress = Math.min(1, Math.max(_progress, 0));
       _progress = _progress > 0.995 ? 1 : _progress;
       onIndicatorMoveRef.current({
         target: indicatorRef.current.firstChild,
-        progress: _progress,
+        progress: isNaN(_progress) ? 1 : _progress,
         isInteracting: isInteracting.current
       });
     }
@@ -2072,21 +2085,9 @@ Content.propTypes = {
 };
 function Pane(_ref5) {
   var children = _ref5.children,
-    eventKey = _ref5.eventKey,
     style = _ref5.style,
     rest = _objectWithoutPropertiesLoose(_ref5, _excluded5);
-  var paneRef = React.useRef(null);
-  var _useContext4 = React.useContext(TabProvider),
-    eventHandler = _useContext4.eventHandler,
-    events = _useContext4.events,
-    snapTo = _useContext4.snapTo;
-  var currentEvent = eventHandler[0];
-  var links = events[0];
-  React.useEffect(function () {
-    if (links.length > 0 && eventKey === currentEvent) snapTo.current(links.indexOf(eventKey));
-  });
   return /*#__PURE__*/React__default.createElement("div", _extends({
-    ref: paneRef,
     style: _extends({
       overflow: 'auto'
     }, style)
