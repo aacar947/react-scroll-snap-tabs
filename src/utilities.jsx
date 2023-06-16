@@ -15,10 +15,10 @@ class Animation {
     const _options = { ...defaultOptions, ...options }
     switch (_options.easing) {
       case 'ease-in':
-        _options.timing = (t) => t * t
+        _options.timing = (t) => t * t * t
         break
       case 'ease-out':
-        _options.timing = (t) => 1 - Math.pow(1 - t, 2)
+        _options.timing = (t) => 1 - Math.pow(1 - t, 3)
         break
       case 'ease-in-out':
         _options.timing = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2)
@@ -187,20 +187,19 @@ export function useScrollSnap({
   }, [])
 
   const getScrollPosition = useCallback(() => {
-    const container = scrollContainerRef.current
     return {
-      top: container.scrollTop,
-      left: container.scrollLeft
+      top: scrollContainerRef.current.scrollTop,
+      left: scrollContainerRef.current.scrollLeft
     }
   }, [])
 
   const snapToDestination = useCallback(
-    (destination, currentPosition, snapDuration, where) => {
-      console.log(snapDuration, where)
+    (destination, snapDuration) => {
       if (!destination) return
-      currentPosition = currentPosition || getScrollPosition()
-      const xDist = destination.left - currentPosition.left
-      const yDist = destination.top - currentPosition.top
+      const scroll = getScrollPosition()
+      console.log('snap start', scroll)
+      const xDist = destination.left - scroll.left
+      const yDist = destination.top - scroll.top
       if (
         xDist === 0 &&
         yDist === 0 &&
@@ -213,9 +212,11 @@ export function useScrollSnap({
       }
 
       const draw = (progress) => {
-        const left = currentPosition.left + progress * xDist
-        const top = currentPosition.top + progress * yDist
-        scrollContainerRef.current.scrollTo({ top, left })
+        const left = scroll.left + progress * xDist
+        const top = scroll.top + progress * yDist
+        scrollContainerRef.current.scrollLeft = left
+        scrollContainerRef.current.scrollTop = top
+        console.log({ left, top })
       }
       animation.current?.stop()
       animation.current.update(draw)
@@ -294,13 +295,15 @@ export function useScrollSnap({
     [swipeThreshold]
   )
 
-  const getSnapDuration = useCallback((swipe, destination, scroll, leftSwipe) => {
+  const getSnapDuration = useCallback((swipe, destination, leftSwipe) => {
+    const scroll = getScrollPosition()
     const delta = leftSwipe
       ? Math.abs(destination.left - scroll.left)
       : Math.abs(destination.top - scroll.top)
     const speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed
     const snapDuration = delta / speed
-    return snapDuration > duration ? duration : 50
+    console.log(snapDuration)
+    return snapDuration > duration ? duration : snapDuration
   }, [])
   const findAPositionAndSnap = useCallback(() => {
     if (!animation.current.stopped) return
@@ -320,13 +323,13 @@ export function useScrollSnap({
       const snapPosition = getSnapPosition(deltaLeft, deltaTop)
       destination = snapPosition
       snapDuration = swipe.current
-        ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop)
+        ? getSnapDuration(swipe.current, destination, absDeltaLeft > absDeltaTop)
         : null
     } else {
       destination = getNearestPositionInViewport()
     }
 
-    snapToDestination(destination, scroll, snapDuration, 'find and snap')
+    snapToDestination(destination, snapDuration)
   }, [
     getScrollPosition,
     isSwipeTresholdExceeded,
@@ -384,6 +387,7 @@ export function useScrollSnap({
     (e) => {
       swipe.current = {}
       const scroll = getScrollPosition()
+      console.log('touch start', scroll)
       swipe.current.xStart = scroll.left
       swipe.current.yStart = scroll.top
       swipe.current.startTime = window.performance ? window.performance.now() : Date.now()
@@ -399,6 +403,7 @@ export function useScrollSnap({
       const endTime = window.performance ? window.performance.now() : Date.now()
       const travelTime = endTime - swipe.current.startTime
       const scroll = getScrollPosition()
+      console.log('touchend', scroll)
       swipe.current.xSpeed = Math.abs((swipe.current.xStart - scroll.left) / travelTime)
       swipe.current.ySpeed = Math.abs((swipe.current.yStart - scroll.top) / travelTime)
       const container = scrollContainerRef.current
@@ -511,7 +516,7 @@ export function useScrollSnap({
           scrollContainerRef.current.scrollTo({ top, left })
           return
         }
-      snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo')
+      snapToDestination(snapPositionList.current[index])
     },
     [snapToDestination, snapPositionList]
   )
