@@ -1142,12 +1142,12 @@ var Animation = /*#__PURE__*/function () {
     switch (_options.easing) {
       case 'ease-in':
         _options.timing = function (t) {
-          return t * t;
+          return t * t * t;
         };
         break;
       case 'ease-out':
         _options.timing = function (t) {
-          return 1 - Math.pow(1 - t, 2);
+          return 1 - Math.pow(1 - t, 3);
         };
         break;
       case 'ease-in-out':
@@ -1315,31 +1315,27 @@ function useScrollSnap(_ref) {
     activePosition.current = snapPositionList.current[0];
   }, []);
   var getScrollPosition = React.useCallback(function () {
-    var container = scrollContainerRef.current;
     return {
-      top: container.scrollTop,
-      left: container.scrollLeft
+      top: scrollContainerRef.current.scrollTop,
+      left: scrollContainerRef.current.scrollLeft
     };
   }, []);
-  var snapToDestination = React.useCallback(function (destination, currentPosition, snapDuration, where) {
+  var snapToDestination = React.useCallback(function (destination, snapDuration) {
     var _animation$current;
-    console.log(snapDuration, where);
     if (!destination) return;
-    currentPosition = currentPosition || getScrollPosition();
-    var xDist = destination.left - currentPosition.left;
-    var yDist = destination.top - currentPosition.top;
+    var scroll = getScrollPosition();
+    var xDist = destination.left - scroll.left;
+    var yDist = destination.top - scroll.top;
     if (xDist === 0 && yDist === 0 && destination.left === activePosition.current.left && destination.top === activePosition.current.top) {
       if (onSnapStart) onSnapStart(destination.index);
       activePosition.current = destination;
       return;
     }
     var draw = function draw(progress) {
-      var left = currentPosition.left + progress * xDist;
-      var top = currentPosition.top + progress * yDist;
-      scrollContainerRef.current.scrollTo({
-        top: top,
-        left: left
-      });
+      var left = scroll.left + progress * xDist;
+      var top = scroll.top + progress * yDist;
+      scrollContainerRef.current.scrollLeft = left;
+      scrollContainerRef.current.scrollTop = top;
     };
     (_animation$current = animation.current) === null || _animation$current === void 0 ? void 0 : _animation$current.stop();
     animation.current.update(draw);
@@ -1390,11 +1386,12 @@ function useScrollSnap(_ref) {
     };
     return deltaTop > swipeThreshold || deltaLeft > swipeThreshold || calcWithInertia();
   }, [swipeThreshold]);
-  var getSnapDuration = React.useCallback(function (swipe, destination, scroll, leftSwipe) {
+  var getSnapDuration = React.useCallback(function (swipe, destination, leftSwipe) {
+    var scroll = getScrollPosition();
     var delta = leftSwipe ? Math.abs(destination.left - scroll.left) : Math.abs(destination.top - scroll.top);
     var speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed;
     var snapDuration = delta / speed;
-    return snapDuration > duration ? duration : 50;
+    return snapDuration > duration ? duration : snapDuration;
   }, []);
   var findAPositionAndSnap = React.useCallback(function () {
     var _scrollStart$current, _scrollStart$current2;
@@ -1409,11 +1406,11 @@ function useScrollSnap(_ref) {
     if (tresholdExceeded) {
       var snapPosition = getSnapPosition(deltaLeft, deltaTop);
       destination = snapPosition;
-      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop) : null;
+      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, absDeltaLeft > absDeltaTop) : null;
     } else {
       destination = getNearestPositionInViewport();
     }
-    snapToDestination(destination, scroll, snapDuration, 'find and snap');
+    snapToDestination(destination, snapDuration);
   }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, getSnapDuration, snapToDestination]);
   var enableScroll = React.useCallback(function () {
     var container = scrollContainerRef.current;
@@ -1527,7 +1524,7 @@ function useScrollSnap(_ref) {
       });
       return;
     }
-    snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo');
+    snapToDestination(snapPositionList.current[index]);
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo: snapTo,

@@ -1114,10 +1114,10 @@ class Animation {
     };
     switch (_options.easing) {
       case 'ease-in':
-        _options.timing = t => t * t;
+        _options.timing = t => t * t * t;
         break;
       case 'ease-out':
-        _options.timing = t => 1 - Math.pow(1 - t, 2);
+        _options.timing = t => 1 - Math.pow(1 - t, 3);
         break;
       case 'ease-in-out':
         _options.timing = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(2 - 2 * t, 2) / 2;
@@ -1268,31 +1268,27 @@ function useScrollSnap({
     activePosition.current = snapPositionList.current[0];
   }, []);
   const getScrollPosition = useCallback(() => {
-    const container = scrollContainerRef.current;
     return {
-      top: container.scrollTop,
-      left: container.scrollLeft
+      top: scrollContainerRef.current.scrollTop,
+      left: scrollContainerRef.current.scrollLeft
     };
   }, []);
-  const snapToDestination = useCallback((destination, currentPosition, snapDuration, where) => {
+  const snapToDestination = useCallback((destination, snapDuration) => {
     var _animation$current;
-    console.log(snapDuration, where);
     if (!destination) return;
-    currentPosition = currentPosition || getScrollPosition();
-    const xDist = destination.left - currentPosition.left;
-    const yDist = destination.top - currentPosition.top;
+    const scroll = getScrollPosition();
+    const xDist = destination.left - scroll.left;
+    const yDist = destination.top - scroll.top;
     if (xDist === 0 && yDist === 0 && destination.left === activePosition.current.left && destination.top === activePosition.current.top) {
       if (onSnapStart) onSnapStart(destination.index);
       activePosition.current = destination;
       return;
     }
     const draw = progress => {
-      const left = currentPosition.left + progress * xDist;
-      const top = currentPosition.top + progress * yDist;
-      scrollContainerRef.current.scrollTo({
-        top,
-        left
-      });
+      const left = scroll.left + progress * xDist;
+      const top = scroll.top + progress * yDist;
+      scrollContainerRef.current.scrollLeft = left;
+      scrollContainerRef.current.scrollTop = top;
     };
     (_animation$current = animation.current) === null || _animation$current === void 0 ? void 0 : _animation$current.stop();
     animation.current.update(draw);
@@ -1344,11 +1340,12 @@ function useScrollSnap({
     };
     return deltaTop > swipeThreshold || deltaLeft > swipeThreshold || calcWithInertia();
   }, [swipeThreshold]);
-  const getSnapDuration = useCallback((swipe, destination, scroll, leftSwipe) => {
+  const getSnapDuration = useCallback((swipe, destination, leftSwipe) => {
+    const scroll = getScrollPosition();
     const delta = leftSwipe ? Math.abs(destination.left - scroll.left) : Math.abs(destination.top - scroll.top);
     const speed = leftSwipe ? swipe.xSpeed : swipe.ySpeed;
     const snapDuration = delta / speed;
-    return snapDuration > duration ? duration : 50;
+    return snapDuration > duration ? duration : snapDuration;
   }, []);
   const findAPositionAndSnap = useCallback(() => {
     var _scrollStart$current, _scrollStart$current2;
@@ -1363,11 +1360,11 @@ function useScrollSnap({
     if (tresholdExceeded) {
       const snapPosition = getSnapPosition(deltaLeft, deltaTop);
       destination = snapPosition;
-      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, scroll, absDeltaLeft > absDeltaTop) : null;
+      snapDuration = swipe.current ? getSnapDuration(swipe.current, destination, absDeltaLeft > absDeltaTop) : null;
     } else {
       destination = getNearestPositionInViewport();
     }
-    snapToDestination(destination, scroll, snapDuration, 'find and snap');
+    snapToDestination(destination, snapDuration);
   }, [getScrollPosition, isSwipeTresholdExceeded, threshold, getSnapPosition, getSnapDuration, snapToDestination]);
   const enableScroll = useCallback(() => {
     const container = scrollContainerRef.current;
@@ -1477,7 +1474,7 @@ function useScrollSnap({
       });
       return;
     }
-    snapToDestination(snapPositionList.current[index], undefined, undefined, 'snapTo');
+    snapToDestination(snapPositionList.current[index]);
   }, [snapToDestination, snapPositionList]);
   return {
     snapTo,
